@@ -81,9 +81,9 @@ class SignupController extends GetxController {
           );
 
           // Delay navigation to allow snackbar to be visible
-          await Future.delayed(Duration(seconds: 3));
+          //await Future.delayed(Duration(seconds: 3));
           // Navigate to LoginPage without replacing the current screen
-          Get.offAll(() => LoginScreen());
+          //Get.offAll(() => LoginScreen());
         } else {
           Get.snackbar(
             'Error',

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:task/profile/views/profile_buttons.dart';
 import 'package:task/signup_page/views/signup_screen.dart';
 import 'package:task/splash_screen/splash_screen.dart';
 
+import 'home_screen/view/view.dart';
 import 'login/views/login_screen.dart';
 
 void main() {
@@ -28,6 +30,22 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/splash', page: () => SplashScreen()),
         GetPage(name: '/login', page: () => LoginScreen()),
         GetPage(name: '/signup', page: () => SignupScreen()),
+        GetPage(
+          name: '/home',
+          page: () => HomeScreen(
+            name: Get.arguments['name'] ?? 'User',
+            username: Get.arguments['username'] ?? '',
+            mobileNumber: Get.arguments['mobileNumber'] ?? 'N/A',
+          ),
+        ),
+        GetPage(
+          name: '/home',
+          page: () => ProfileButtons(
+            name: Get.arguments['name'] ?? 'User',
+            username: Get.arguments['username'] ?? '',
+            mobileNumber: Get.arguments['mobileNumber'] ?? 'N/A',
+          ),
+        ),
       ],
     );
   }

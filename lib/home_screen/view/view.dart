@@ -5,10 +5,23 @@ import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-
+import 'package:flutter/cupertino.dart';
+import 'package:task/home_screen/view/print-screen.dart';
+import 'package:task/profile/views/profile_buttons.dart';
+import '../../print/views/print_screen.dart';
 import '../controller/controller.dart';
 
 class HomeScreen extends StatefulWidget {
+  final String name;
+  final String username;
+  final String mobileNumber;
+
+  const HomeScreen({
+    Key? key,
+    required this.name,
+    required this.username,
+    required this.mobileNumber,
+  }) : super(key: key);
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -42,9 +55,19 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Products', style: TextStyle(fontWeight: FontWeight.w600)),
-        leading: Icon(Icons.menu),
-        backgroundColor: Colors.blueAccent,
+        title: Text('Hello ${widget.name}', style: TextStyle(fontWeight: FontWeight.w600, )),
+        // In HomeScreen's AppBar
+        leading: IconButton(
+          onPressed: () {
+            Get.to(() => ProfileButtons(
+              name: widget.name,
+              username: widget.username,
+              mobileNumber: widget.mobileNumber,
+            ));
+          },
+          icon: Icon(CupertinoIcons.profile_circled, size: 30, color: Colors.blueGrey.shade900),
+        ),
+        backgroundColor: Colors.orange.withOpacity(0.6),
         actions: [
           IconButton(onPressed: _controller.fetchProducts, icon: Icon(Icons.sync))
         ],
@@ -260,14 +283,34 @@ class _HomeScreenState extends State<HomeScreen>
                                             stackTrace) =>
                                             Icon(
                                                 Icons
-                                                    .image_not_supported,
+                                                    .image,
                                                 color: Colors
                                                     .blueAccent),
                                       ),
                                     )
-                                        : Icon(Icons.image_not_supported,
+                                        : Icon(Icons.image,
                                         color: Colors.blueAccent),
                                   ),
+                                  /*
+                                  leading: product.itemImage != null && product.itemImage!.isNotEmpty
+                                      ? CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                                    child: ClipOval(
+                                      child: Image.network(
+                                        product.itemImage!,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          // If image fails to load, return an empty SizedBox (i.e. show nothing)
+                                          return SizedBox.shrink();
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                      : SizedBox.shrink(),
+                                   */
                                   title:
                                   Text(product.itemName ?? 'No name'),
                                   subtitle: Text(
@@ -336,13 +379,28 @@ class _HomeScreenState extends State<HomeScreen>
                             Padding(
                               padding: EdgeInsets.all(16),
                               child: ElevatedButton(
-                                onPressed: _controller.totalAmount > 0
+                                /*onPressed: _controller.totalAmount > 0
                                     ? () {
                                   Get.snackbar(
                                     'Checkout',
                                     'Proceeding to checkout....',
                                     snackPosition:
                                     SnackPosition.BOTTOM,
+                                  );
+                                }
+                                    : null,*/
+                                onPressed: _controller.totalAmount > 0
+                                    ? () {
+                                  Get.to(() => PrintScreen(
+                                    name: widget.name,
+                                    mobileNumber: widget.mobileNumber,
+                                    selectedProducts: _controller.selectedProducts.toList(),
+                                    totalAmount: _controller.totalAmount,
+                                  ));
+                                  Get.snackbar(
+                                    'Checkout',
+                                    'Proceeding to checkout....',
+                                    snackPosition: SnackPosition.BOTTOM,
                                   );
                                 }
                                     : null,
@@ -375,184 +433,187 @@ class _HomeScreenState extends State<HomeScreen>
               : SizedBox.shrink(),
         );
       }),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: TextField(
-                onChanged: (value) => _controller.filterProducts(value),
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  prefixIcon: Icon(Icons.search),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.blueAccent),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.blue, width: 2),
+      body: Container(
+        color: Colors.orange.withOpacity(0.4),
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: TextField(
+                  onChanged: (value) => _controller.filterProducts(value),
+                  decoration: InputDecoration(
+                    hintText: 'Search products...',
+                    prefixIcon: Icon(Icons.search),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.blueAccent),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Obx(() => _controller.isLoading.value
-                  ? _buildShimmerGrid()
-                  : _controller.errorMessage.isNotEmpty
-                  ? Center(child: Text(_controller.errorMessage.value))
-                  : _controller.filteredProducts.isEmpty
-                  ? Container(
-                color: Colors.white,
-                child: Center(
-                  child: Container(
-                    height: double.infinity,
-                    width: double.infinity,
-                    child: Lottie.asset('assets/No Data found.json'),
+              Expanded(
+                child: Obx(() => _controller.isLoading.value
+                    ? _buildShimmerGrid()
+                    : _controller.errorMessage.isNotEmpty
+                    ? Center(child: Text(_controller.errorMessage.value))
+                    : _controller.filteredProducts.isEmpty
+                    ? Container(
+                  color: Colors.white,
+                  child: Center(
+                    child: Container(
+                      height: double.infinity,
+                      width: double.infinity,
+                      child: Lottie.asset('assets/No Data found.json'),
+                    ),
                   ),
-                ),
-              )
-                  : Scrollbar(
-                thumbVisibility: true,
-                radius: Radius.circular(10),
-                thickness: 6,
-                child: GridView.builder(
-                  padding: EdgeInsets.all(7),
-                  gridDelegate:
-                  SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.85,
-                    crossAxisSpacing: 3,
-                    mainAxisSpacing: 3,
+                )
+                    : Scrollbar(
+                  thumbVisibility: true,
+                  radius: Radius.circular(10),
+                  thickness: 6,
+                  child: GridView.builder(
+                    padding: EdgeInsets.all(7),
+                    gridDelegate:
+                    SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 3,
+                      mainAxisSpacing: 3,
+                    ),
+                    itemCount: _controller.filteredProducts.length,
+                    itemBuilder: (context, index) {
+                      final product =
+                      _controller.filteredProducts[index];
+                      final originalIndex =
+                      _controller.products.indexOf(product);
+                      // Log parameters for grid items
+                      print('Grid Item at index $index: '
+                          'itemName: ${product.itemName != null ? "Displayed (${product.itemName})" : "Not Displayed"}, '
+                          'sellingPrice: ${product.sellingPrice != null ? "Displayed (${product.sellingPrice})" : "Not Displayed"}, '
+                          'itemImage: ${product.itemImage != null && product.itemImage!.isNotEmpty ? "Displayed (${product.itemImage})" : "Not Displayed"}');
+                      final isSearchMatch = _controller
+                          .searchQuery.value.isNotEmpty &&
+                          (product.itemName != null &&
+                              product.itemName!
+                                  .toLowerCase()
+                                  .replaceAll(' ', '')
+                                  .contains(_controller.searchQuery
+                                  .value
+                                  .toLowerCase()
+                                  .replaceAll(' ', '')));
+                      return Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: isSearchMatch
+                              ? BorderSide(
+                              color: Colors.green, width: 1)
+                              : BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 1),
+                        ),
+                        color: Colors.grey[200],
+                        child: Column(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment:
+                                MainAxisAlignment.center,
+                                children: [
+                                  product.itemImage != null &&
+                                      product
+                                          .itemImage!.isNotEmpty
+                                      ? Image.network(
+                                    product.itemImage!,
+                                    height: 80,
+                                    width: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context,
+                                        error,
+                                        stackTrace) =>
+                                        Icon(
+                                            Icons
+                                                .image_not_supported,
+                                            size: 50,
+                                            color: Colors
+                                                .blueAccent),
+                                  )
+                                      : Icon(
+                                      Icons.image_not_supported,
+                                      size: 50,
+                                      color: Colors.blueAccent),
+                                  SizedBox(height: 8),
+                                  Text(
+                                      product.itemName ?? 'No name',
+                                      style: TextStyle(
+                                          fontWeight:
+                                          FontWeight.bold,
+                                          fontSize: 16)),
+                                  Text(
+                                      '₹${product.sellingPrice?.toStringAsFixed(2) ?? 'N/A'}',
+                                      style: TextStyle(
+                                          color: Colors.grey[700])),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                              const EdgeInsets.only(bottom: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                MainAxisAlignment.center,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _controller
+                                        .decrementQuantity(
+                                        originalIndex),
+                                    child: CircleAvatar(
+                                      backgroundColor:
+                                      Colors.red.shade700,
+                                      radius: 14,
+                                      child: Icon(Icons.remove,
+                                          color: Colors.white,
+                                          size: 20),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(product.quantity.toString(),
+                                      style:
+                                      TextStyle(fontSize: 16)),
+                                  SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () => _controller
+                                        .incrementQuantity(
+                                        originalIndex),
+                                    child: CircleAvatar(
+                                      backgroundColor:
+                                      Colors.green.shade700,
+                                      radius: 14,
+                                      child: Icon(Icons.add,
+                                          color: Colors.white,
+                                          size: 20),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                  itemCount: _controller.filteredProducts.length,
-                  itemBuilder: (context, index) {
-                    final product =
-                    _controller.filteredProducts[index];
-                    final originalIndex =
-                    _controller.products.indexOf(product);
-                    // Log parameters for grid items
-                    print('Grid Item at index $index: '
-                        'itemName: ${product.itemName != null ? "Displayed (${product.itemName})" : "Not Displayed"}, '
-                        'sellingPrice: ${product.sellingPrice != null ? "Displayed (${product.sellingPrice})" : "Not Displayed"}, '
-                        'itemImage: ${product.itemImage != null && product.itemImage!.isNotEmpty ? "Displayed (${product.itemImage})" : "Not Displayed"}');
-                    final isSearchMatch = _controller
-                        .searchQuery.value.isNotEmpty &&
-                        (product.itemName != null &&
-                            product.itemName!
-                                .toLowerCase()
-                                .replaceAll(' ', '')
-                                .contains(_controller.searchQuery
-                                .value
-                                .toLowerCase()
-                                .replaceAll(' ', '')));
-                    return Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: isSearchMatch
-                            ? BorderSide(
-                            color: Colors.green, width: 1)
-                            : BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 1),
-                      ),
-                      color: Colors.grey[200],
-                      child: Column(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment:
-                              MainAxisAlignment.center,
-                              children: [
-                                product.itemImage != null &&
-                                    product
-                                        .itemImage!.isNotEmpty
-                                    ? Image.network(
-                                  product.itemImage!,
-                                  height: 80,
-                                  width: 80,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context,
-                                      error,
-                                      stackTrace) =>
-                                      Icon(
-                                          Icons
-                                              .image_not_supported,
-                                          size: 50,
-                                          color: Colors
-                                              .blueAccent),
-                                )
-                                    : Icon(
-                                    Icons.image_not_supported,
-                                    size: 50,
-                                    color: Colors.blueAccent),
-                                SizedBox(height: 8),
-                                Text(
-                                    product.itemName ?? 'No name',
-                                    style: TextStyle(
-                                        fontWeight:
-                                        FontWeight.bold,
-                                        fontSize: 16)),
-                                Text(
-                                    '₹${product.sellingPrice?.toStringAsFixed(2) ?? 'N/A'}',
-                                    style: TextStyle(
-                                        color: Colors.grey[700])),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                            const EdgeInsets.only(bottom: 10),
-                            child: Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment.center,
-                              children: [
-                                GestureDetector(
-                                  onTap: () => _controller
-                                      .decrementQuantity(
-                                      originalIndex),
-                                  child: CircleAvatar(
-                                    backgroundColor:
-                                    Colors.red.shade700,
-                                    radius: 14,
-                                    child: Icon(Icons.remove,
-                                        color: Colors.white,
-                                        size: 20),
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Text(product.quantity.toString(),
-                                    style:
-                                    TextStyle(fontSize: 16)),
-                                SizedBox(width: 12),
-                                GestureDetector(
-                                  onTap: () => _controller
-                                      .incrementQuantity(
-                                      originalIndex),
-                                  child: CircleAvatar(
-                                    backgroundColor:
-                                    Colors.green.shade700,
-                                    radius: 14,
-                                    child: Icon(Icons.add,
-                                        color: Colors.white,
-                                        size: 20),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              )),
-            ),
-          ],
+                )),
+              ),
+            ],
+          ),
         ),
       ),
     );
