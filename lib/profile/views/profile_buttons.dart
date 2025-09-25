@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:task/AddBiller/views/add_biller_screen.dart';
+import 'package:task/AddCategory/views/add_category_views.dart';
+import 'package:task/AddProducts/Views/add-products_view.dart';
+import 'package:task/Add_Tax/Views/add_tax_view.dart';
 import 'package:task/login/views/login_screen.dart';
 import 'package:task/profile/views/profile_page.dart';
 import '../widgets/profile_action_button.dart';
@@ -9,12 +13,14 @@ class ProfileButtons extends StatelessWidget {
   final String name;
   final String username;
   final String mobileNumber;
+  final String businessId;
 
   const ProfileButtons({
     super.key,
     required this.name,
     required this.username,
     required this.mobileNumber,
+    required this.businessId,
   });
 
   @override
@@ -31,7 +37,7 @@ class ProfileButtons extends StatelessWidget {
           ),
         ),
         leading: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(8.0),
           child: GestureDetector(
             onTap: () {
               Navigator.of(context).pop();
@@ -106,7 +112,7 @@ class ProfileButtons extends StatelessWidget {
                     ),
                     SizedBox(height: 16),
                     Text(
-                      name, // Dynamic name from parameter
+                      'Business ID: $businessId', // Dynamic name from parameter
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -114,18 +120,19 @@ class ProfileButtons extends StatelessWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      username, // Dynamic username from parameter
+                      name, // Dynamic username from parameter
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 8),
-                    Text(
-                      mobileNumber, // Dynamic mobile number from parameter
+                    /*Text(
+                      '$username', // Dynamic mobile number from parameter
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: Colors.grey.shade600,
                       ),
-                    ),
+                    ),*/
                   ],
                 ),
               ),
@@ -144,33 +151,33 @@ class ProfileButtons extends StatelessWidget {
               const Divider(height: 1, thickness: 1, color: Colors.grey),
               ProfileActionButton(
                 icon: Icons.location_on_outlined,
-                title: 'Address',
+                title: 'Add Products',
                 onTap: () {
-                  // Handle address action
+                  Get.to(()=>AddProductsPage(businessId: businessId,));// Handle address action
                 },
               ),
               const Divider(height: 1, thickness: 1, color: Colors.grey),
               ProfileActionButton(
                 icon: Icons.favorite_border,
-                title: 'Favorites',
+                title: 'Add Category',
                 onTap: () {
-                  // Handle favorites action
+                  Get.to(()=>AddCategoryView(businessId: businessId,));// Handle favorites action
                 },
               ),
               const Divider(height: 1, thickness: 1, color: Colors.grey),
               ProfileActionButton(
                 icon: Icons.work_history_outlined,
-                title: 'Your Orders',
+                title: 'Add Tax',
                 onTap: () {
-                  // Handle orders action
+                  Get.to(()=>AddTaxView(businessId:businessId));// Handle orders action
                 },
               ),
               const Divider(height: 1, thickness: 1, color: Colors.grey),
               ProfileActionButton(
                 icon: Icons.security,
-                title: 'Privacy & Security',
+                title: 'Add Biller',
                 onTap: () {
-                  // Handle privacy action
+                  Get.to(()=>AddBillerScreen());// Handle privacy action
                 },
               ),
               const Divider(height: 1, thickness: 1, color: Colors.grey),

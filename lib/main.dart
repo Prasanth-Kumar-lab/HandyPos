@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task/profile/views/profile_buttons.dart';
+import 'package:task/profile/views/profile_buttons.dart';
 import 'package:task/signup_page/views/signup_screen.dart';
 import 'package:task/splash_screen/splash_screen.dart';
 
@@ -36,6 +37,8 @@ class MyApp extends StatelessWidget {
             name: Get.arguments['name'] ?? 'User',
             username: Get.arguments['username'] ?? '',
             mobileNumber: Get.arguments['mobileNumber'] ?? 'N/A',
+            businessId: Get.arguments['business_id']??'N/A',
+            role: Get.arguments['role'] ?? 'N/A',
           ),
         ),
         GetPage(
@@ -44,6 +47,7 @@ class MyApp extends StatelessWidget {
             name: Get.arguments['name'] ?? 'User',
             username: Get.arguments['username'] ?? '',
             mobileNumber: Get.arguments['mobileNumber'] ?? 'N/A',
+            businessId: Get.arguments['business_id']?? 'N/A',
           ),
         ),
       ],

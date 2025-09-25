@@ -3,7 +3,8 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:task/api_endpoints.dart';
 import 'package:task/login/views/login_screen.dart';
-import 'package:task/signup_page/model/user_model.dart';
+
+import '../model/user_model.dart';
 
 class SignupController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -12,13 +13,11 @@ class SignupController extends GetxController {
   final mobileNumberController = TextEditingController();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
-  final adminIdController = TextEditingController();
   final aadharNumberController = TextEditingController();
   final addressController = TextEditingController();
 
   var isLoading = false.obs;
   var obscurePassword = true.obs;
-  var selectedRole = 'Admin'.obs;
 
   @override
   void onClose() {
@@ -26,7 +25,6 @@ class SignupController extends GetxController {
     mobileNumberController.dispose();
     usernameController.dispose();
     passwordController.dispose();
-    adminIdController.dispose();
     aadharNumberController.dispose();
     addressController.dispose();
     super.onClose();
@@ -34,12 +32,6 @@ class SignupController extends GetxController {
 
   void togglePasswordVisibility() {
     obscurePassword.toggle();
-  }
-
-  void setRole(String? role) {
-    if (role != null) {
-      selectedRole.value = role;
-    }
   }
 
   Future<void> handleSignup() async {
@@ -52,10 +44,9 @@ class SignupController extends GetxController {
         mobileNumber: mobileNumberController.text.trim(),
         username: usernameController.text.trim(),
         password: passwordController.text.trim(),
-        role: selectedRole.value,
-        adminId: selectedRole.value == 'Biller' ? adminIdController.text.trim() : null,
-        aadharNumber: aadharNumberController.text.trim().isNotEmpty ? aadharNumberController.text.trim() : null,
-        address: addressController.text.trim().isNotEmpty ? addressController.text.trim() : null,
+        role: 'Admin',
+        aadharNumber: aadharNumberController.text.trim(),
+        address: addressController.text.trim(),
       );
 
       try {
@@ -80,10 +71,8 @@ class SignupController extends GetxController {
             icon: Icon(Icons.check_circle, color: Colors.white),
           );
 
-          // Delay navigation to allow snackbar to be visible
-          //await Future.delayed(Duration(seconds: 3));
-          // Navigate to LoginPage without replacing the current screen
-          //Get.offAll(() => LoginScreen());
+          // Navigate to LoginPage
+          Get.offAll(() => LoginScreen());
         } else {
           Get.snackbar(
             'Error',

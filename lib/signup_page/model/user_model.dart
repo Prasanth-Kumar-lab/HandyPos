@@ -1,12 +1,12 @@
+
 class UserModelSignUp {
   final String name;
   final String mobileNumber;
   final String username;
   final String password;
   final String role;
-  final String? adminId;
-  final String? aadharNumber;
-  final String? address;
+  final String aadharNumber;
+  final String address;
 
   UserModelSignUp({
     required this.name,
@@ -14,9 +14,8 @@ class UserModelSignUp {
     required this.username,
     required this.password,
     required this.role,
-    this.adminId,
-    this.aadharNumber,
-    this.address,
+    required this.aadharNumber,
+    required this.address,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,8 +24,7 @@ class UserModelSignUp {
     'username': username,
     'password': password,
     'role': role,
-    if (adminId != null) 'admin_id': adminId,
-    if (aadharNumber != null) 'aadhar_number': aadharNumber,
-    if (address != null) 'address': address,
+    'aadhar_number': aadharNumber,
+    'address': address,
   };
 }

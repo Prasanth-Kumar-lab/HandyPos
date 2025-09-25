@@ -343,7 +343,7 @@ class PrintScreen extends StatelessWidget {
  */
 import 'package:flutter_bluetooth_printer/flutter_bluetooth_printer_library.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+//import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
@@ -552,7 +552,7 @@ class PrintScreen extends StatelessWidget {
                           Expanded(
                             flex: 2,
                             child: Text(
-                              '${product.quantity}Kg',
+                              'x${product.quantity}',//Total quantity
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                           ),
@@ -661,7 +661,7 @@ class PrintScreen extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -680,10 +680,10 @@ class PrintScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () => controller.printReceipt(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.orange.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: const Text(
+              child: Text(
                 "Print",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),

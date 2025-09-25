@@ -6,7 +6,6 @@ import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:task/home_screen/view/print-screen.dart';
 import 'package:task/profile/views/profile_buttons.dart';
 import '../../print/views/print_screen.dart';
 import '../controller/controller.dart';
@@ -15,12 +14,16 @@ class HomeScreen extends StatefulWidget {
   final String name;
   final String username;
   final String mobileNumber;
+  final String businessId;
+  final String role;
 
   const HomeScreen({
     Key? key,
     required this.name,
     required this.username,
     required this.mobileNumber,
+    required this.businessId,
+    required this.role
   }) : super(key: key);
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -63,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen>
               name: widget.name,
               username: widget.username,
               mobileNumber: widget.mobileNumber,
+              businessId: widget.businessId,
             ));
           },
           icon: Icon(CupertinoIcons.profile_circled, size: 30, color: Colors.blueGrey.shade900),
