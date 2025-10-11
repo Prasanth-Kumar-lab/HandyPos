@@ -1,7 +1,8 @@
 import 'dart:convert';
+import 'dart:io'; // Added for File handling
 
 class AddProductsAPI {
-  final String productId; // Added for product_id
+  final String productId;
   final String productCode;
   final String productCat;
   final String itemName;
@@ -12,6 +13,7 @@ class AddProductsAPI {
   final String igst;
   final String businessId;
   final String availabilityStatus;
+  final String? imagePath; // Added for image_path
 
   AddProductsAPI({
     required this.productId,
@@ -25,11 +27,12 @@ class AddProductsAPI {
     required this.igst,
     required this.businessId,
     required this.availabilityStatus,
+    this.imagePath, // Nullable image_path
   });
 
   factory AddProductsAPI.fromJson(Map<String, dynamic> json) {
     return AddProductsAPI(
-      productId: json['product_id'] as String? ?? '', // Map product_id
+      productId: json['product_id'] as String? ?? '',
       productCode: json['product_code'] as String? ?? '',
       productCat: json['product_cat'] as String? ?? '',
       itemName: json['item_name'] as String? ?? '',
@@ -40,12 +43,13 @@ class AddProductsAPI {
       igst: json['igst'] as String? ?? '',
       businessId: json['business_id'] as String? ?? '',
       availabilityStatus: json['availability_status'] as String? ?? '',
+      imagePath: json['image_path'] as String?, // Handle image_path
     );
   }
 
   Map<String, String> toMap() {
     return {
-      'product_id': productId, // Include product_id
+      'product_id': productId,
       'product_code': productCode,
       'product_cat': productCat,
       'item_name': itemName,
@@ -56,6 +60,7 @@ class AddProductsAPI {
       'igst': igst,
       'business_id': businessId,
       'availability_status': availabilityStatus,
+      // image_path is not included here as it's handled separately as a file
     };
   }
 }

@@ -1,170 +1,113 @@
-/*
-import 'dart:developer';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_bluetooth_printer/flutter_bluetooth_printer.dart';
-import 'package:lottie/lottie.dart';
-import 'package:printing/printing.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart'; // 👈 This is the missing import!
-class Print extends StatefulWidget {
-  const Print({Key? key}) : super(key: key);
+import 'package:http/http.dart' as http;
 
+class ProductListScreen extends StatefulWidget {
   @override
-  State<Print> createState() => _PrintState();
+  _ProductListScreenState createState() => _ProductListScreenState();
 }
 
-class _PrintState extends State<Print> {
-  ReceiptController? controllerl;
-  var _selectedPrinter; // Holds the selected printer device
+class _ProductListScreenState extends State<ProductListScreen> {
+  final TextEditingController _businessIdController = TextEditingController();
+  List<dynamic> _products = [];
+  bool _isLoading = false;
 
-  Future<void> _generateAndPrintPdf() async {
-    final pdf = pw.Document();
+  Future<void> fetchProducts() async {
+    final businessId = _businessIdController.text.trim();
+    if (businessId.isEmpty) return;
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.roll80,
-        build: (pw.Context context) => pw.Center(
-          child: pw.Text(
-            'Hello World',
-            style: pw.TextStyle(
-              fontSize: 40,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-    );
+    setState(() {
+      _isLoading = true;
+      _products.clear();
+    });
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
-
-  /// Select Bluetooth Printer
-  Future<void> _selectBluetoothDevice() async {
-    final selected = await FlutterBluetoothPrinter.selectDevice(context);
-    if (selected != null) {
-      setState(() {
-        _selectedPrinter = selected;
-      });
-      log("Selected device: ${_selectedPrinter.name}");
-    } else {
-      log("Device selection canceled.");
-    }
-  }
-
-  /// Print to Selected Device
-  Future<void> _printReceipt() async {
-    if (_selectedPrinter == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a printer first')),
-      );
-      return;
-    }
+    final url = Uri.parse(
+        'https://erpapp.in/mart_print/mart_print_apis/list_products_api.php');
 
     try {
-      await controllerl?.print(
-        address: _selectedPrinter.address,
-        keepConnected: true,
-        addFeeds: 4,
+      final response = await http.post(
+        url,
+        body: {'business_id': businessId},
       );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _products = data;
+        });
+      } else {
+        throw Exception('Failed to load products');
+      }
     } catch (e) {
-      log('Printing failed: $e');
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching products')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  Widget buildProductCard(dynamic product) {
+    return Card(
+      child: ListTile(
+        leading: Image.network(
+          product['image_path'] ?? '',
+          width: 50,
+          height: 50,
+          errorBuilder: (context, error, stackTrace) => Icon(Icons.image),
+        ),
+        title: Text(product['item_name'] ?? 'No Name'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Selling Price: ₹${product['selling_price']}'),
+            Text('Available Quantity: ${product['available_quantity']}'),
+            Text('Category: ${product['product_cat']}'),
+          ],
+        ),
+        isThreeLine: true,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hello PDF Example'),
-      ),
-      body: Column(
-        children: [
-          // 👇 DISPLAY SELECTED PRINTER ABOVE RECEIPT (not printed)
-          if (_selectedPrinter != null)
-            Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  // Lottie animation (printer, loading, etc.)
-                  SizedBox(
-                    height: 40,
-                    width: 40,
-                    child: Lottie.asset(
-                      'assets/active.json', // 🔁 Replace with your actual asset path
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(width: 10), // spacing between animation and text
-                  Expanded(
-                    child: Text(
-                      'Selected Printer: ${_selectedPrinter.name ?? _selectedPrinter.address}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // 👇 RECEIPT - ONLY THIS PART IS PRINTED
-          Expanded(
-            child: Receipt(
-              builder: (context) => Column(
-                children: [
-                  Text('Hello World'),
-                  SizedBox(height: 5),
-                  Text('Address, Place'),
-                  SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Icon(Icons.account_circle, size: 40, color: Colors.blue),
-                      Text(
-                        'Username',
-                        style: TextStyle(fontSize: 20),
-                      ),
-                      Icon(Icons.check_circle, color: Colors.green),
-                    ],
-                  ),
-                ],
-              ),
-              onInitialized: (controller) {
-                this.controllerl = controller;
-              },
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.all(16.0),
+      appBar: AppBar(title: Text('Product List')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            ElevatedButton(
-              onPressed: _selectBluetoothDevice,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
+            TextField(
+              controller: _businessIdController,
+              decoration: InputDecoration(
+                labelText: 'Enter Business ID',
+                border: OutlineInputBorder(),
               ),
-              child: Text("Select Device"),
             ),
             SizedBox(height: 10),
             ElevatedButton(
-              onPressed: _printReceipt,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+              onPressed: fetchProducts,
+              child: Text('Submit'),
+            ),
+            SizedBox(height: 20),
+            _isLoading
+                ? CircularProgressIndicator()
+                : _products.isEmpty
+                ? Text('No products found.')
+                : Expanded(
+              child: ListView.builder(
+                itemCount: _products.length,
+                itemBuilder: (context, index) =>
+                    buildProductCard(_products[index]),
               ),
-              child: Text("Print"),
             ),
           ],
         ),
       ),
     );
   }
-
 }
-
- */

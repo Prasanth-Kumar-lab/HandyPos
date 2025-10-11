@@ -1,6 +1,8 @@
+import 'dart:io'; // Added for File handling
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:image_picker/image_picker.dart'; // Added for image picker
 import '../Controller/add_product_controller.dart';
 import '../model/add_product_model.dart';
 import '../model/list_product_category_fetch.dart';
@@ -29,7 +31,9 @@ class _EditProductPageState extends State<EditProductPage> {
   String? _selectedCgst;
   String? _selectedSgst;
   String? _selectedIgst;
-  String? _selectedAvailabilityStatus; // New variable for availability status
+  String? _selectedAvailabilityStatus;
+  File? _selectedImage; // Added for image picking
+  final ImagePicker _picker = ImagePicker(); // Image picker instance
 
   @override
   void initState() {
@@ -39,17 +43,13 @@ class _EditProductPageState extends State<EditProductPage> {
     _productCodeController.text = widget.product.productCode ?? '';
     _itemNameController.text = widget.product.itemName ?? '';
     _sellingPriceController.text = widget.product.sellingPrice ?? '';
-    _unitsController.text = widget.product.units ?? ''; // Ensure units is set
+    _unitsController.text = widget.product.units ?? '';
     _availabilityStatusController.text = widget.product.availabilityStatus ?? '';
     _businessIdController.text = controller.businessId ?? '';
-
-    // Debug units value
-    print('Units value from product: ${widget.product.units}');
 
     // Initialize dropdown values and ensure they are valid
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
-        // Validate Product Category
         final categoryNames = controller.categories
             .map((cat) => cat.catName)
             .toSet()
@@ -58,7 +58,6 @@ class _EditProductPageState extends State<EditProductPage> {
             ? widget.product.productCat
             : (categoryNames.isNotEmpty ? categoryNames.first : null);
 
-        // Validate CGST
         final cgstValues = controller.taxes
             .where((tax) => tax.taxType.toLowerCase() == 'cgst')
             .map((tax) => tax.taxPercentage)
@@ -68,7 +67,6 @@ class _EditProductPageState extends State<EditProductPage> {
             ? widget.product.cgst
             : (cgstValues.isNotEmpty ? cgstValues.first : null);
 
-        // Validate SGST
         final sgstValues = controller.taxes
             .where((tax) => tax.taxType.toLowerCase() == 'sgst')
             .map((tax) => tax.taxPercentage)
@@ -78,7 +76,6 @@ class _EditProductPageState extends State<EditProductPage> {
             ? widget.product.sgst
             : (sgstValues.isNotEmpty ? sgstValues.first : null);
 
-        // Validate IGST
         final igstValues = controller.taxes
             .where((tax) => tax.taxType.toLowerCase() == 'igst')
             .map((tax) => tax.taxPercentage)
@@ -88,13 +85,12 @@ class _EditProductPageState extends State<EditProductPage> {
             ? widget.product.igst
             : (igstValues.isNotEmpty ? igstValues.first : null);
 
-        // Validate Availability Status
-        _selectedAvailabilityStatus = widget.product.availabilityStatus == 'yes' || widget.product.availabilityStatus == 'Yes'
-            ? 'Yes'
-            : widget.product.availabilityStatus == 'no' || widget.product.availabilityStatus == 'No'
-            ? 'No'
-            : 'Yes'; // Default to "Yes" if invalid
-        _availabilityStatusController.text = _selectedAvailabilityStatus ?? 'Yes';
+        _selectedAvailabilityStatus = widget.product.availabilityStatus == 'Available' || widget.product.availabilityStatus == 'Available'
+            ? 'Available'
+            : widget.product.availabilityStatus == 'Un-Available' || widget.product.availabilityStatus == 'Un-Available'
+            ? 'Un-Available'
+            : 'Available';
+        _availabilityStatusController.text = _selectedAvailabilityStatus ?? 'Available';
       });
     });
   }
@@ -111,6 +107,26 @@ class _EditProductPageState extends State<EditProductPage> {
     super.dispose();
   }
 
+  // Function to pick image
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final file = File(image.path);
+        final fileSize = await file.length();
+        if (fileSize > 500 * 1024) {
+          Get.snackbar('Error', 'Image size must be less than 500KB');
+          return;
+        }
+        setState(() {
+          _selectedImage = file;
+        });
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Error picking image: $e');
+    }
+  }
+
   void _updateProduct() {
     if (_formKey.currentState!.validate()) {
       final params = {
@@ -123,10 +139,10 @@ class _EditProductPageState extends State<EditProductPage> {
         'cgst': _selectedCgst ?? '',
         'sgst': _selectedSgst ?? '',
         'igst': _selectedIgst ?? '',
-        'availability_status': _selectedAvailabilityStatus ?? '', // Use selected value
+        'availability_status': _selectedAvailabilityStatus ?? '',
         'business_id': _businessIdController.text,
       };
-      controller.updateProduct(widget.product.productCode, params);
+      controller.updateProduct(widget.product.productCode, params, _selectedImage);
       Navigator.pop(context);
     }
   }
@@ -178,10 +194,6 @@ class _EditProductPageState extends State<EditProductPage> {
           .toSet()
           .toList();
 
-      // Debugging: Log available tax percentages
-      print('$label available values: $uniqueTaxPercentages');
-      print('$label selected value: $selectedValue');
-
       return DropdownButtonFormField2<String>(
         decoration: InputDecoration(
           labelText: label,
@@ -211,7 +223,7 @@ class _EditProductPageState extends State<EditProductPage> {
         }).toList(),
         onChanged: (value) {
           onChanged(value);
-          setState(() {}); // Ensure UI updates
+          setState(() {});
         },
         validator: (value) => value == null ? 'Please select $label' : null,
         dropdownStyleData: DropdownStyleData(
@@ -271,8 +283,6 @@ class _EditProductPageState extends State<EditProductPage> {
                     .map((cat) => cat.catName)
                     .toSet()
                     .toList();
-                print('Category available values: $categoryNames');
-                print('Category selected value: $_selectedCategory');
 
                 return DropdownButtonFormField2<String>(
                   decoration: InputDecoration(
@@ -352,7 +362,7 @@ class _EditProductPageState extends State<EditProductPage> {
                 label: 'Units',
                 icon: Icons.confirmation_number,
                 validator: (value) => value!.isEmpty ? 'Required' : null,
-                keyboardType: TextInputType.text, // Allow text for units (e.g., "kg", "pcs")
+                keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 24),
               const Text(
@@ -394,6 +404,52 @@ class _EditProductPageState extends State<EditProductPage> {
               ),
               const SizedBox(height: 24),
               const Text(
+                'Product Image',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedImage != null
+                          ? 'Image Selected: ${_selectedImage!.path.split('/').last}'
+                          : widget.product.imagePath != null && widget.product.imagePath!.isNotEmpty
+                          ? 'Current Image: ${widget.product.imagePath!.split('/').last}'
+                          : 'No image selected',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.image),
+                    label: const Text('Replace Image'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey.shade100,
+                      foregroundColor: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              widget.product.imagePath != null && widget.product.imagePath!.isNotEmpty && _selectedImage == null
+                  ? Image.network(
+                widget.product.imagePath!,
+                height: 100,
+                width: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported),
+              )
+                  : _selectedImage != null
+                  ? Image.file(
+                _selectedImage!,
+                height: 100,
+                width: 100,
+                fit: BoxFit.cover,
+              )
+                  : const Icon(Icons.image_not_supported, size: 100),
+              const SizedBox(height: 24),
+              const Text(
                 'Availability',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
@@ -418,14 +474,14 @@ class _EditProductPageState extends State<EditProductPage> {
                 hint: const Text('Select Availability'),
                 items: const [
                   DropdownMenuItem<String>(
-                    value: 'Yes',
+                    value: 'Available',
                     child: SizedBox(
                       height: 40,
                       child: Text('Available'),
                     ),
                   ),
                   DropdownMenuItem<String>(
-                    value: 'No',
+                    value: 'Un-Available',
                     child: SizedBox(
                       height: 40,
                       child: Text('Un-Available'),

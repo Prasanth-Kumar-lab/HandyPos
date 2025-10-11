@@ -1,6 +1,8 @@
+import 'dart:io'; // Added for File handling
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:image_picker/image_picker.dart'; // Added for image picker
 import '../Controller/add_product_controller.dart';
 import 'custom_tab_bar.dart';
 import 'edit_products_page.dart';
@@ -28,15 +30,17 @@ class _AddProductsPageState extends State<AddProductsPage>
   String? _selectedCgst;
   String? _selectedSgst;
   String? _selectedIgst;
-  String? _selectedAvailabilityStatus; // New variable for availability status
+  String? _selectedAvailabilityStatus;
+  File? _selectedImage; // Added for image picking
+  final ImagePicker _picker = ImagePicker(); // Image picker instance
 
   @override
   void initState() {
     super.initState();
     _businessIdController.text = widget.businessId;
     controller = Get.put(AddProductsController(businessId: widget.businessId));
-    _availabilityStatusController.text = 'Available'; // Default to "Yes"
-    _selectedAvailabilityStatus = 'Available'; // Default to "Yes"
+    _availabilityStatusController.text = 'Available';
+    _selectedAvailabilityStatus = 'Available';
   }
 
   @override
@@ -50,6 +54,26 @@ class _AddProductsPageState extends State<AddProductsPage>
     super.dispose();
   }
 
+  // Function to pick image
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final file = File(image.path);
+        final fileSize = await file.length();
+        if (fileSize > 500 * 1024) {
+          Get.snackbar('Error', 'Image size must be less than 500KB');
+          return;
+        }
+        setState(() {
+          _selectedImage = file;
+        });
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Error picking image: $e');
+    }
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final params = {
@@ -61,10 +85,10 @@ class _AddProductsPageState extends State<AddProductsPage>
         'cgst': _selectedCgst ?? '',
         'sgst': _selectedSgst ?? '',
         'igst': _selectedIgst ?? '',
-        'availability_status': _selectedAvailabilityStatus ?? '', // Use selected value
+        'availability_status': _selectedAvailabilityStatus ?? '',
         'business_id': _businessIdController.text,
       };
-      controller.addProduct(params);
+      controller.addProduct(params, _selectedImage);
       _clearForm();
     }
   }
@@ -78,9 +102,10 @@ class _AddProductsPageState extends State<AddProductsPage>
     _selectedCgst = null;
     _selectedSgst = null;
     _selectedIgst = null;
-    _selectedAvailabilityStatus = 'Available'; // Reset to "Yes" on clear
-    _availabilityStatusController.text = 'Available'; // Reset text field
+    _selectedAvailabilityStatus = 'Available';
+    _availabilityStatusController.text = 'Available';
     _businessIdController.text = widget.businessId;
+    _selectedImage = null; // Clear selected image
     setState(() {});
   }
 
@@ -306,6 +331,42 @@ class _AddProductsPageState extends State<AddProductsPage>
             ),
             const SizedBox(height: 24),
             const Text(
+              'Product Image',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedImage != null
+                        ? 'Image Selected: ${_selectedImage!.path.split('/').last}'
+                        : 'No image selected',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _pickImage,
+                  icon: const Icon(Icons.image),
+                  label: const Text('Choose Image'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade100,
+                    foregroundColor: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            if (_selectedImage != null) ...[
+              const SizedBox(height: 16),
+              Image.file(
+                _selectedImage!,
+                height: 100,
+                width: 100,
+                fit: BoxFit.cover,
+              ),
+            ],
+            const SizedBox(height: 24),
+            const Text(
               'Availability',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -394,6 +455,15 @@ class _AddProductsPageState extends State<AddProductsPage>
         itemBuilder: (context, index) {
           final product = controller.products[index];
           return ListTile(
+            leading: product.imagePath != null && product.imagePath!.isNotEmpty
+                ? Image.network(
+              product.imagePath!,
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported),
+            )
+                : const Icon(Icons.image_not_supported, size: 50),
             title: Text(product.itemName),
             subtitle: Text(
               'Price: ₹${product.sellingPrice} | Category: ${product.productCat}',
@@ -408,7 +478,7 @@ class _AddProductsPageState extends State<AddProductsPage>
             },
             trailing: IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () => controller.deleteProduct(product.productId), // Use productId
+              onPressed: () => controller.deleteProduct(product.productId),
             ),
           );
         },

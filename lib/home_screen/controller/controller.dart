@@ -849,7 +849,7 @@ class ProductController extends GetxController {
     finalInvoiceId.value = '';
     products.refresh();
     filteredProducts.refresh();
-    Get.snackbar('Success', 'Cart cleared in UI', snackPosition: SnackPosition.BOTTOM);
+    //Get.snackbar('Success', 'Cart cleared in UI', snackPosition: SnackPosition.BOTTOM);
   }
 
   List<Product> get selectedProducts => products.where((p) => p.quantity > 0).toList();

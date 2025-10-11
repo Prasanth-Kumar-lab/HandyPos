@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io'; // Added for File handling
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
@@ -40,11 +41,9 @@ class AddProductsController extends GetxController {
             .toList();
       } else {
         print('Failed to fetch categories: ${response.statusCode}');
-        //Get.snackbar('Error', 'Please add categories');
       }
     } catch (e) {
       print('Error fetching categories: Please ask admin to add');
-      //Get.snackbar('Error', 'Error fetching categories. please add categories to select ');//$e
     }
   }
 
@@ -73,11 +72,9 @@ class AddProductsController extends GetxController {
             .toList();
       } else {
         print('Failed to fetch taxes: ${response.statusCode}');
-        //Get.snackbar('Error', 'Failed to fetch taxes please add taxes in profile');
       }
     } catch (e) {
       print('Error fetching taxes: Please ask admin to add');
-      //Get.snackbar('Error', 'Error fetching taxes: Please add taxes in profile');//$e
     }
   }
 
@@ -103,18 +100,29 @@ class AddProductsController extends GetxController {
             .toList();
       } else {
         print('Failed to fetch products: ${response.statusCode}');
-        //Get.snackbar('Error', 'Failed to fetch products');
       }
     } catch (e) {
       print('Error fetching products: $e');
-      //Get.snackbar('Error', 'Error fetching products: $e');
     }
   }
 
-  Future<void> addProduct(Map<String, String> params) async {
+  Future<void> addProduct(Map<String, String> params, File? imageFile) async {
     final request = http.MultipartRequest('POST', Uri.parse(ApiConstants.addProductsEndPoint));
     params['business_id'] = businessId;
     request.fields.addAll(params);
+
+    // Add image file if provided
+    if (imageFile != null) {
+      final fileSize = await imageFile.length();
+      if (fileSize > 500 * 1024) {
+        Get.snackbar('Error', 'Image size must be less than 500KB');
+        return;
+      }
+      request.files.add(await http.MultipartFile.fromPath(
+        'item_image',
+        imageFile.path,
+      ));
+    }
 
     try {
       final streamedResponse = await request.send();
@@ -139,11 +147,24 @@ class AddProductsController extends GetxController {
     }
   }
 
-  Future<void> updateProduct(String productCode, Map<String, String> params) async {
+  Future<void> updateProduct(String productCode, Map<String, String> params, File? imageFile) async {
     params['product_code'] = productCode;
     params['business_id'] = businessId;
     final request = http.MultipartRequest('POST', Uri.parse('${ApiConstants.updateProductsEndPoint}'));
     request.fields.addAll(params);
+
+    // Add image file if provided
+    if (imageFile != null) {
+      final fileSize = await imageFile.length();
+      if (fileSize > 500 * 1024) {
+        Get.snackbar('Error', 'Image size must be less than 500KB');
+        return;
+      }
+      request.files.add(await http.MultipartFile.fromPath(
+        'item_image',
+        imageFile.path,
+      ));
+    }
 
     try {
       final streamedResponse = await request.send();
@@ -171,7 +192,7 @@ class AddProductsController extends GetxController {
   Future<void> deleteProduct(String productId) async {
     final request = http.MultipartRequest('POST', Uri.parse('https://erpapp.in/mart_print/mart_print_apis/delete_products_api.php'));
     request.fields['product_id'] = productId;
-    request.fields['business_id'] = businessId; // Dynamically pass businessId
+    request.fields['business_id'] = businessId;
 
     try {
       final streamedResponse = await request.send();

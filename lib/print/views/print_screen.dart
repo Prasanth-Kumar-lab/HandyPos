@@ -748,18 +748,6 @@ class PrintScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 0),
-                      const Divider(color: Colors.black),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('DISCOUNT (10%):', style: TextStyle(fontSize: 16)),
-                          Text(
-                            discountAmt.toStringAsFixed(2),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ],
-                      ),
                       const Divider(color: Colors.black),
                       const SizedBox(height: 5),
                       Row(
@@ -770,41 +758,19 @@ class PrintScreen extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                           ),
                           Text(
-                            grandAmt.toStringAsFixed(2),
+                            printController.totalAmount.value.toStringAsFixed(2),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 5),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Given Amount:', style: TextStyle(fontSize: 16)),
-                          Text(
-                            givenAmount.toStringAsFixed(2),
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('RETURN Amount:', style: TextStyle(fontSize: 16)),
-                          Text(
-                            returnAmount.toStringAsFixed(2),
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       const Center(
                         child: Text(
                           'Thank You.. Visit Again..!',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
                         ),
                       ),
-                      const SizedBox(height: 5),
+                      SizedBox(height: 5),
                     ],
                   );
                 },

@@ -6,6 +6,7 @@ import 'package:task/AddBiller/views/add_biller_screen.dart';
 import 'package:task/AddCategory/views/add_category_views.dart';
 import 'package:task/AddProducts/Views/add-products_view.dart';
 import 'package:task/Add_Tax/Views/add_tax_view.dart';
+import 'package:task/Reports/view/reports_view.dart';
 import 'package:task/login/views/login_screen.dart';
 import '../../AddSystemSettings/view/system_settings_view.dart';
 import 'profile_page.dart';
@@ -86,9 +87,9 @@ class ProfileButtons extends StatelessWidget {
                 title: 'Add System Settings',
               ),
               _buildMenuItem(
-                value: 'Settings',
+                value: 'Daily Reports',
                 icon: Icons.settings_outlined,
-                title: 'Settings',
+                title: 'Daily Reports',
               ),
               _buildMenuItem(
                 value: 'Logout',
@@ -123,7 +124,8 @@ class ProfileButtons extends StatelessWidget {
                   Get.to(() => AddSystemSettingsView(),
                       arguments: {'businessId': businessId});
                   break;
-                case 'Settings':
+                case 'Daily Reports':
+                  Get.to(()=>ReportsView(businessId: businessId,));
                 // Handle settings action
                   break;
                 case 'Logout':
