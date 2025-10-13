@@ -6,6 +6,7 @@ import 'package:task/AddBiller/views/add_biller_screen.dart';
 import 'package:task/AddCategory/views/add_category_views.dart';
 import 'package:task/AddProducts/Views/add-products_view.dart';
 import 'package:task/Add_Tax/Views/add_tax_view.dart';
+import 'package:task/BillersList/view/billers_view.dart';
 import 'package:task/Reports/view/reports_view.dart';
 import 'package:task/login/views/login_screen.dart';
 import '../../AddSystemSettings/view/system_settings_view.dart';
@@ -238,7 +239,7 @@ class ProfileButtons extends StatelessWidget {
                     color: Colors.orange.shade100,
                     icon: Icons.people,
                     onTap: () {
-                      Get.snackbar('Tapped', 'You tapped on Billers');
+                      Get.to(()=>BillerList(businessId: businessId));
                     },
                   ),
                   _buildDashboardBox(
@@ -246,7 +247,7 @@ class ProfileButtons extends StatelessWidget {
                     color: Colors.green.shade100,
                     icon: Icons.bar_chart,
                     onTap: () {
-                      Get.snackbar('Tapped', 'You tapped on Customers');
+                      //Get.snackbar('Tapped', 'You tapped on Customers');
                     },
                   ),
                   _buildDashboardBox(
@@ -254,7 +255,7 @@ class ProfileButtons extends StatelessWidget {
                     color: Colors.blue.shade100,
                     icon: Icons.attach_money,
                     onTap: () {
-                      Get.snackbar('Tapped', 'You tapped on Transactions');
+                      //Get.snackbar('Tapped', 'You tapped on Transactions');
                     },
                   ),
                   _buildDashboardBox(
@@ -262,7 +263,7 @@ class ProfileButtons extends StatelessWidget {
                     color: Colors.purple.shade100,
                     icon: Icons.receipt_long,
                     onTap: () {
-                      Get.snackbar('Tapped', 'You tapped on Invoices');
+                      //Get.snackbar('Tapped', 'You tapped on Invoices');
                     },
                   ),
                 ],
