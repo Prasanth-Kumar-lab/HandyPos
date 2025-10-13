@@ -11,6 +11,9 @@ class ReportDisplayView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ReportDisplayController(data: data));
+    final String? fromDate = Get.arguments?['fromDate'];
+    final String? toDate = Get.arguments?['toDate'];
+    final String? reportType = Get.arguments?['reportType'];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -71,11 +74,54 @@ class ReportDisplayView extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           color: controller.status == 'Success' ? Colors.green.shade600 : Colors.red.shade600,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'From Date:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A2E35),
+                        ),
+                      ),
+                      Text(
+                        fromDate ?? 'Not selected',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (reportType != null && reportType.contains('Monthly')) const SizedBox(height: 8),
+                  if (reportType != null && reportType.contains('Monthly'))
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'To Date:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A2E35),
+                          ),
+                        ),
+                        Text(
+                          toDate ?? 'Not selected',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -93,7 +139,7 @@ class ReportDisplayView extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFF4C430),
+                          color: Colors.orange,
                         ),
                       ),
                     ],
@@ -159,9 +205,10 @@ class ReportDisplayView extends StatelessWidget {
                           ),
                           Text(
                             order['biller_name'] ?? 'Unknown',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueAccent,
                             ),
                           ),
                         ],
@@ -182,7 +229,7 @@ class ReportDisplayView extends StatelessWidget {
                             '₹${order['sub_total'] ?? '0.00'}',
                             style: const TextStyle(
                               fontSize: 16,
-                              color: Colors.grey,
+                              color: Colors.black,
                             ),
                           ),
                         ],
@@ -203,7 +250,7 @@ class ReportDisplayView extends StatelessWidget {
                             order['total_quantity'] ?? '0',
                             style: const TextStyle(
                               fontSize: 16,
-                              color: Colors.grey,
+                              color: Colors.black,
                             ),
                           ),
                         ],

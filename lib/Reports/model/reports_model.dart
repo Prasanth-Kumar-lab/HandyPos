@@ -13,7 +13,7 @@ class ReportModel {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List) {
-          return data.map((item) => item['biller_id'].toString()).toList();
+          return data.map((item) => item['biller_name'].toString()).toList();
         } else if (data is Map && data.containsKey('data') && data['data'] is List) {
           return data['data'].map((item) => item['biller_id'].toString()).toList();
         }

@@ -87,9 +87,24 @@ class ProfileButtons extends StatelessWidget {
                 title: 'Add System Settings',
               ),
               _buildMenuItem(
-                value: 'Daily Reports',
-                icon: Icons.settings_outlined,
-                title: 'Daily Reports',
+                value: 'Day Reports',
+                icon: Icons.area_chart_outlined,
+                title: 'Day Reports',
+              ),
+              _buildMenuItem(
+                value: 'Monthly Reports',
+                icon: Icons.bar_chart,
+                title: 'Monthly Reports',
+              ),
+              _buildMenuItem(
+                value: 'Biller Day Reports',
+                icon: Icons.area_chart_outlined,
+                title: 'Biller Day Reports',
+              ),
+              _buildMenuItem(
+                value: 'Biller Monthly Reports',
+                icon: Icons.bar_chart,
+                title: 'Biller Monthly Reports',
               ),
               _buildMenuItem(
                 value: 'Logout',
@@ -121,12 +136,19 @@ class ProfileButtons extends StatelessWidget {
                   Get.to(() => AddBillerScreen(businessId: businessId));
                   break;
                 case 'Add System Settings':
-                  Get.to(() => AddSystemSettingsView(),
-                      arguments: {'businessId': businessId});
+                  Get.to(() => AddSystemSettingsView(), arguments: {'businessId': businessId});
                   break;
-                case 'Daily Reports':
-                  Get.to(()=>ReportsView(businessId: businessId,));
-                // Handle settings action
+                case 'Day Reports':
+                  Get.to(() => ReportsView(businessId: businessId), arguments: {'reportType': 'Day Report'});
+                  break;
+                case 'Monthly Reports':
+                  Get.to(() => ReportsView(businessId: businessId), arguments: {'reportType': 'Monthly Report'});
+                  break;
+                case 'Biller Day Reports':
+                  Get.to(() => ReportsView(businessId: businessId), arguments: {'reportType': 'Biller Wise Day Report'});
+                  break;
+                case 'Biller Monthly Reports':
+                  Get.to(() => ReportsView(businessId: businessId), arguments: {'reportType': 'Biller Wise Monthly Report'});
                   break;
                 case 'Logout':
                   _logout(context);
@@ -135,7 +157,7 @@ class ProfileButtons extends StatelessWidget {
             },
           ),
         ],
-        backgroundColor: Colors.orange.shade300,
+        backgroundColor: Colors.green.shade300,
         foregroundColor: Colors.black87,
         elevation: 0,
       ),

@@ -9,16 +9,22 @@ import '../controller/biller_reports_controller.dart';
 class BillerReportsView extends StatelessWidget {
   final String businessId;
   final String billerId;
+  final String reportType;
 
   const BillerReportsView({
     Key? key,
     required this.businessId,
     required this.billerId,
+    required this.reportType,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(BillerReportsController(businessId: businessId, billerId: billerId));
+    final controller = Get.put(BillerReportsController(
+      businessId: businessId,
+      billerId: billerId,
+      reportType: reportType,
+    ));
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -29,10 +35,10 @@ class BillerReportsView extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Get.back(),
         ),
-        title: const Text(
-          'Biller Reports',
+        title: Text(
+          '$reportType',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black,
             fontWeight: FontWeight.w600,
             fontSize: 20,
           ),
@@ -44,82 +50,68 @@ class BillerReportsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Select Report Type',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A2E35),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Obx(() => DropdownButtonFormField<String>(
-              isExpanded: true,
-              value: controller.reportType.value.isEmpty ? null : controller.reportType.value,
-              hint: const Text('Choose Report Type'),
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
-              items: controller.reportTypes.map((type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Text(type),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                controller.reportType.value = value ?? '';
-              },
-            )),
-            const SizedBox(height: 24),
-            Obx(() {
-              if (controller.reportType.value.isEmpty) return const SizedBox.shrink();
-              return Column(
+            Text.rich(
+              TextSpan(
                 children: [
-                  _buildDateField(
-                    label: 'From Date',
-                    controller: controller.fromDateController,
-                    icon: Icons.calendar_today,
-                    onTap: () => controller.pickFromDate(context),
-                  ),
-                  if (controller.reportType.value.contains('Monthly')) const SizedBox(height: 16),
-                  if (controller.reportType.value.contains('Monthly'))
-                    _buildDateField(
-                      label: 'To Date',
-                      controller: controller.toDateController,
-                      icon: Icons.calendar_today,
-                      onTap: () => controller.pickToDate(context),
+                  const TextSpan(
+                    text: 'Report Type: ',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
                     ),
-                  const SizedBox(height: 32),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: controller.generateReport,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF4C430),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                      ),
-                      child: const Text(
-                        'Generate Report',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A2E35),
-                        ),
-                      ),
+                  ),
+                  TextSpan(
+                    text: controller.reportType.isEmpty
+                        ? 'No Report Type Selected'
+                        : controller.reportType,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      //fontWeight: FontWeight.bold,
+                      //color: Colors.green,
                     ),
                   ),
                 ],
-              );
-            }),
+              ),
+            ),
+            SizedBox(height: 24,),
+            Column(
+              children: [
+                _buildDateField(
+                  label: 'From Date',
+                  controller: controller.fromDateController,
+                  icon: Icons.calendar_today,
+                  onTap: () => controller.pickFromDate(context),
+                ),
+                if (reportType.contains('Monthly')) const SizedBox(height: 16),
+                if (reportType.contains('Monthly'))
+                  _buildDateField(
+                    label: 'To Date',
+                    controller: controller.toDateController,
+                    icon: Icons.calendar_today,
+                    onTap: () => controller.pickToDate(context),
+                  ),
+                SizedBox(height: 28),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: controller.generateReport,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFF4C430),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    ),
+                    child: Text(
+                      'Generate Report',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A2E35),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -133,12 +125,12 @@ class BillerReportsView extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Colors.black),
       ),
       child: TextField(
         controller: controller,
@@ -148,14 +140,14 @@ class BillerReportsView extends StatelessWidget {
           labelText: label,
           prefixIcon: Icon(icon, color: const Color(0xFF1A2E35)),
           border: InputBorder.none,
-          labelStyle: TextStyle(color: Colors.grey.shade600),
+          labelStyle: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         style: TextStyle(
           fontSize: 16,
-          color: Colors.grey.shade600,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
         ),
       ),
     );
   }
 }
-

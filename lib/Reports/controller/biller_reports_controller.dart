@@ -1,26 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:intl/intl.dart';
 
 import '../model/biller_reports_model.dart';
-import '../view/biller_reports_view.dart';
 import '../view/biller_reports_data.dart';
+
 class BillerReportsController extends GetxController {
   final BillerReportsModel _reportModel = BillerReportsModel();
   final String businessId;
   final String billerId;
+  final String reportType;
 
-  final reportType = ''.obs;
   final fromDateController = TextEditingController();
   final toDateController = TextEditingController();
 
-  final List<String> reportTypes = [
-    'Day Report',
-    'Monthly Report',
-  ];
+  BillerReportsController({
+    required this.businessId,
+    required this.billerId,
+    required this.reportType,
+  });
 
-  BillerReportsController({required this.businessId, required this.billerId});
+  @override
+  void onInit() {
+    super.onInit();
+    // Set default dates based on report type
+    fromDateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    if (reportType == 'Monthly Report') {
+      toDateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    }
+  }
 
   Future<void> pickFromDate(BuildContext context) async {
     DateTime? picked = await showDatePicker(
@@ -48,7 +56,7 @@ class BillerReportsController extends GetxController {
 
   Future<void> generateReport() async {
     String from = fromDateController.text;
-    String to = reportType.value.contains('Day') ? '0' : toDateController.text;
+    String to = reportType.contains('Day') ? '0' : toDateController.text;
 
     if (from.isEmpty || (to != '0' && to.isEmpty)) {
       Get.snackbar(
@@ -69,14 +77,28 @@ class BillerReportsController extends GetxController {
       billerId: billerId,
     );
     if (data.isNotEmpty) {
-      Get.to(() => BillerReportsDisplayView(data: data));
+      Get.to(() => BillerReportsDisplayView(
+        data: data,
+        reportType: reportType,
+        fromDate: from,
+        toDate: to,
+      ));
     }
   }
 }
+
 class BillerReportsDisplayController extends GetxController {
   final dynamic data;
+  final String reportType;
+  final String fromDate;
+  final String toDate;
 
-  BillerReportsDisplayController({required this.data});
+  BillerReportsDisplayController({
+    required this.data,
+    required this.reportType,
+    required this.fromDate,
+    required this.toDate,
+  });
 
   String get status => data['status'] ?? 'Unknown';
   String get totalCollections => data['total_collections_today']?.toString() ?? '0';

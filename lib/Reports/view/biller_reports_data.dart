@@ -1,18 +1,30 @@
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:flutter/material.dart';
 
 import '../controller/biller_reports_controller.dart';
 
 class BillerReportsDisplayView extends StatelessWidget {
   final dynamic data;
+  final String reportType;
+  final String fromDate;
+  final String toDate;
 
-  const BillerReportsDisplayView({Key? key, required this.data}) : super(key: key);
+  const BillerReportsDisplayView({
+    Key? key,
+    required this.data,
+    required this.reportType,
+    required this.fromDate,
+    required this.toDate,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(BillerReportsDisplayController(data: data));
+    final controller = Get.put(BillerReportsDisplayController(
+      data: data,
+      reportType: reportType,
+      fromDate: fromDate,
+      toDate: toDate,
+    ));
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -57,6 +69,70 @@ class BillerReportsDisplayView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Report Type:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A2E35),
+                        ),
+                      ),
+                      Text(
+                        controller.reportType,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'From Date:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A2E35),
+                        ),
+                      ),
+                      Text(
+                        controller.fromDate,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (controller.reportType.contains('Monthly'))
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'To Date:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A2E35),
+                          ),
+                        ),
+                        Text(
+                          controller.toDate,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

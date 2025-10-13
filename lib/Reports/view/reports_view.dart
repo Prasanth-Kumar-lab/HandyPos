@@ -24,7 +24,7 @@ class ReportsView extends StatelessWidget {
         title: const Text(
           'Reports',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black,
             fontWeight: FontWeight.w600,
             fontSize: 20,
           ),
@@ -36,40 +36,29 @@ class ReportsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Select Report Type',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A2E35),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Obx(() => DropdownButtonFormField<String>(
-              isExpanded: true,
-              value: controller.reportType.value.isEmpty ? null : controller.reportType.value,
-              hint: const Text('Choose Report Type'),
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
-              items: controller.reportTypes.map((type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Text(type),
+            Obx(() => Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Report Type: ',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
                   ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                controller.reportType.value = value ?? '';
-              },
+                  TextSpan(
+                    text: controller.reportType.value.isEmpty
+                        ? 'No Report Type Selected'
+                        : controller.reportType.value,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      //fontWeight: FontWeight.bold,
+                      //color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
             )),
             const SizedBox(height: 24),
             Obx(() {
@@ -77,7 +66,7 @@ class ReportsView extends StatelessWidget {
               return Column(
                 children: [
                   _buildDateField(
-                    label: 'From Date',
+                    label: 'From Date:',
                     controller: controller.fromDateController,
                     icon: Icons.calendar_today,
                     onTap: () => controller.pickFromDate(context),
@@ -102,7 +91,7 @@ class ReportsView extends StatelessWidget {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderSide: BorderSide(color: Colors.black),
                         ),
                         filled: true,
                         fillColor: Colors.grey.shade50,
@@ -156,12 +145,12 @@ class ReportsView extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced padding
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Colors.black),
       ),
       child: TextField(
         controller: controller,
@@ -169,17 +158,23 @@ class ReportsView extends StatelessWidget {
         onTap: onTap,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF1A2E35)),
+          prefixIcon: Icon(icon, color: const Color(0xFF1A2E35), size: 20), // Smaller icon
           border: InputBorder.none,
-          labelStyle: TextStyle(color: Colors.grey.shade600),
+          isDense: true, // Makes the TextField more compact
+          contentPadding: EdgeInsets.symmetric(vertical: 10), // Reduced internal padding
+          labelStyle: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 14, // Slightly smaller label font
+          ),
         ),
         style: TextStyle(
-          fontSize: 16,
-          color: Colors.grey.shade600,
+          fontSize: 14, // Reduced font size
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
         ),
       ),
     );
   }
+
 }
-
-

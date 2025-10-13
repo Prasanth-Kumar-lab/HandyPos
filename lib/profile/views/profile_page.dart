@@ -46,6 +46,30 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
+        actions: role == 'Biller'
+            ? [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: Colors.black),
+            onSelected: (value) {
+              Get.to(() => BillerReportsView(
+                businessId: businessId,
+                billerId: user_id,
+                reportType: value,
+              ));
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'Day Report',
+                child: Text('Day wise reports'),
+              ),
+              PopupMenuItem<String>(
+                value: 'Monthly Report',
+                child: Text('Monthly wise reports'),
+              ),
+            ],
+          ),
+        ]
+            : null,
       ),
       body: Obx(() {
         if (controller.profile.value == null) {
@@ -212,90 +236,61 @@ class ProfilePage extends StatelessWidget {
         ),
         SizedBox(height: 10),
         Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (role == 'Biller')
-                Padding(
-                  padding: EdgeInsets.only(right: 16),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.to(() => BillerReportsView(businessId: businessId, billerId: user_id));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Color(0xFF1A2E35),
-                      side: BorderSide(color: Color(0xFF1A2E35), width: 2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                    ),
-                    child: Text(
-                      'Reports',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A2E35),
-                      ),
-                    ),
-                  ),
-                ),
-              ElevatedButton(
-                onPressed: () {
-                  Get.dialog(
-                    AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      title: Text(
-                        'Confirm Logout',
-                        style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1A2E35)),
-                      ),
-                      content: Text('Are you sure you want to log out?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Get.back(),
-                          child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.clear();
-                            Get.offAll(() => const LoginScreen());
-                            Get.snackbar(
-                              'Logged Out',
-                              'You have been logged out successfully.',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: Color(0xFFE57373),
-                              colorText: Colors.white,
-                              margin: EdgeInsets.all(16),
-                              borderRadius: 12,
-                            );
-                          },
-                          child: Text(
-                            'Logout',
-                            style: TextStyle(color: Color(0xFFE57373)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    barrierDismissible: false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Color(0xFFE57373),
-                  side: BorderSide(color: Color(0xFFE57373), width: 2),
+          child: ElevatedButton(
+            onPressed: () {
+              Get.dialog(
+                AlertDialog(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                ),
-                child: Text(
-                  'Logout',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFE57373),
+                  title: Text(
+                    'Confirm Logout',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1A2E35)),
                   ),
+                  content: Text('Are you sure you want to log out?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.clear();
+                        Get.offAll(() => const LoginScreen());
+                        Get.snackbar(
+                          'Logged Out',
+                          'You have been logged out successfully.',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Color(0xFFE57373),
+                          colorText: Colors.white,
+                          margin: EdgeInsets.all(16),
+                          borderRadius: 12,
+                        );
+                      },
+                      child: Text(
+                        'Logout',
+                        style: TextStyle(color: Color(0xFFE57373)),
+                      ),
+                    ),
+                  ],
                 ),
+                barrierDismissible: false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Color(0xFFE57373),
+              side: BorderSide(color: Color(0xFFE57373), width: 2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            ),
+            child: Text(
+              'Logout',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE57373),
               ),
-            ],
+            ),
           ),
         ),
         SizedBox(height: 10),
@@ -331,7 +326,14 @@ class ProfilePage extends StatelessWidget {
         ),
         SizedBox(height: 16),
         _buildEditableDetailTile('Name', nameController, Icons.person, isEditing),
-        _buildEditableDetailTile('Username', usernameController, Icons.alternate_email, isEditing),
+        _buildEditableDetailTile(
+          'Username',
+          usernameController,
+          Icons.alternate_email,
+          isEditing,
+          readOnly: true,
+        ),
+
         _buildPasswordTile(controller, passwordController, isEditing),
         _buildEditableDetailTile('Mobile Number', mobileNumberController, Icons.phone, isEditing, keyboardType: TextInputType.phone),
         _buildEditableDetailTile('Role', roleController, Icons.work, isEditing),
@@ -387,6 +389,7 @@ class ProfilePage extends StatelessWidget {
       IconData icon,
       RxBool isEditing, {
         TextInputType? keyboardType,
+        bool readOnly = false, // <-- Add this line
       }) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
@@ -400,6 +403,7 @@ class ProfilePage extends StatelessWidget {
           ? TextField(
         controller: controller,
         keyboardType: keyboardType,
+        readOnly: readOnly, // <-- Apply readOnly here
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: Color(0xFF1A2E35)),
@@ -408,7 +412,7 @@ class ProfilePage extends StatelessWidget {
         ),
         style: TextStyle(
           fontSize: 16,
-          color: Colors.grey.shade600,
+          color: Colors.black,
         ),
       )
           : Row(
@@ -430,7 +434,7 @@ class ProfilePage extends StatelessWidget {
               maxLines: 2,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey.shade600,
+                color: Colors.black,
               ),
             ),
           ),
@@ -438,6 +442,7 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
+
 
   Widget _buildPasswordTile(ProfileController controller, TextEditingController passwordController, RxBool isEditing) {
     return Container(
@@ -494,7 +499,7 @@ class ProfilePage extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey.shade600,
+                    color: Colors.black,
                     fontFamily: controller.isPasswordVisible.value ? null : 'monospace',
                   ),
                 )),

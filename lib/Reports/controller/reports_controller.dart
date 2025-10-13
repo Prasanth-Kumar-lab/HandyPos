@@ -9,6 +9,8 @@ import '../view/reports_view.dart';
 class ReportsController extends GetxController {
   final ReportModel _reportModel = ReportModel();
   final String businessId;
+  final bool isReportTypePreSelected; // New flag
+  final String? preSelectedReportType; // Store pre-selected report type
 
   final reportType = ''.obs;
   final fromDateController = TextEditingController();
@@ -23,12 +25,18 @@ class ReportsController extends GetxController {
     'Biller Wise Monthly Report',
   ];
 
-  ReportsController({required this.businessId});
+  ReportsController({required this.businessId})
+      : isReportTypePreSelected = Get.arguments != null && Get.arguments['reportType'] != null,
+        preSelectedReportType = Get.arguments?['reportType'];
 
   @override
   void onInit() {
     super.onInit();
     fetchBillerIds();
+    // Set the pre-selected report type if provided
+    if (isReportTypePreSelected && preSelectedReportType != null) {
+      reportType.value = preSelectedReportType!;
+    }
   }
 
   Future<void> fetchBillerIds() async {
@@ -86,11 +94,17 @@ class ReportsController extends GetxController {
       billerId: biller,
     );
     if (data.isNotEmpty) {
-      Get.to(() => ReportDisplayView(data: data));
+      Get.to(
+            () => ReportDisplayView(data: data),
+        arguments: {
+          'fromDate': from,
+          'toDate': to,
+          'reportType': reportType.value,
+        },
+      );
     }
   }
 }
-
 
 class ReportDisplayController extends GetxController {
   final dynamic data;
