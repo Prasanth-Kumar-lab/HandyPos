@@ -55,7 +55,7 @@ class SystemSettingsController extends GetxController {
       }
     } catch (e) {
       Fluttertoast.showToast(
-        msg: "Failed to pick image: $e",
+        msg: "Failed to pick image: ", //$e
         backgroundColor: Colors.red.shade600,
       );
     }
@@ -116,7 +116,11 @@ class SystemSettingsController extends GetxController {
       );
     }
   }*/
-  Future<void> saveSystemSettings(GlobalKey<FormState> formKey) async {
+
+  Future<void> saveSystemSettings(
+      GlobalKey<FormState> formKey, {
+        Future<void> Function()? onSuccess, // <-- callback after save
+      }) async {
     if (!formKey.currentState!.validate()) return;
 
     isLoading.value = true;
@@ -129,13 +133,12 @@ class SystemSettingsController extends GetxController {
       firmContact2: firmContact2Controller.text,
       file: selectedImagePath.value.isNotEmpty
           ? selectedImagePath.value.split('/').last
-          : fileController.text, // fallback to old path
+          : fileController.text,
       billAddress: billAddressController.text,
       billGstinNum: billGstinNumController.text,
       businessId: businessIdController.text,
     );
 
-    // Pass the actual file path for upload
     final result = await model.saveSettings(
       selectedImagePath: selectedImagePath.value,
     );
@@ -145,21 +148,22 @@ class SystemSettingsController extends GetxController {
     if (result['status'] == 'success') {
       savedData.value = result['data'];
 
-      // Optionally refresh settings after save
-      // You might want to refetch from server to get updated logo URL
-
       Fluttertoast.showToast(
         msg: result['message'] ?? 'Settings saved successfully!',
         backgroundColor: Colors.green.shade600,
       );
 
-      // Clear selected image after successful upload (optional)
-      // clearImage();
+      // Auto-refresh after successful save
+      if (onSuccess != null) {
+        await onSuccess();
+      }
+
     } else {
       Fluttertoast.showToast(
-        msg: result['message'] ?? 'Failed to save settings',
+        msg: 'Failed to save settings',
         backgroundColor: Colors.red.shade600,
       );
     }
   }
+
 }

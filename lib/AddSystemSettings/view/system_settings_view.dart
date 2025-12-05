@@ -690,213 +690,232 @@ class _SystemSettingsViewState extends State<SystemSettingsView> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Form(
         key: formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Edit System Settings',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              CircularInputField(
-                controller: controller.billPrefixController,
-                labelText: 'Bill Prefix',
-                hintText: 'e.g., INV',
-                validator: (v) => controller.validateField(v, 'bill prefix'),
-              ),
-              const SizedBox(height: 16),
-
-              CircularInputField(
-                controller: controller.quoteController,
-                labelText: 'Quote',
-                hintText: 'Enter your company quote',
-              ),
-              const SizedBox(height: 16),
-
-              CircularInputField(
-                controller: controller.firmNameController,
-                labelText: 'Firm Name',
-                validator: (v) => controller.validateField(v, 'firm name'),
-              ),
-              const SizedBox(height: 16),
-
-              CircularInputField(
-                controller: controller.firmContact1Controller,
-                labelText: 'Contact 1',
-                keyboardType: TextInputType.phone,
-                validator: (v) => controller.validateField(v, 'contact 1'),
-              ),
-              const SizedBox(height: 16),
-
-              CircularInputField(
-                controller: controller.firmContact2Controller,
-                labelText: 'Contact 2 (Optional)',
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-
-              /*CircularInputField(
-                controller: controller.fileController,
-                labelText: 'Logo Path',
-                hintText: 'e.g., /bill_quotes/3',
-                validator: (v) => controller.validateField(v, 'logo path'),
-              ),*/
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bill Logo',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      // ---- IMAGE PREVIEW BOX ----
-                      Obx(() {
-                        String existingLogoUrl = controller.fileController.text.trim();
-                        String pickedImage = controller.selectedImagePath.value;
-
-                        Widget imageWidget;
-
-                        if (pickedImage.isNotEmpty) {
-                          imageWidget = Image.file(
-                            File(pickedImage),
-                            fit: BoxFit.contain,
-                          );
-                        } else if (existingLogoUrl.isNotEmpty) {
-                          imageWidget = Image(
-                            image: CachedNetworkImageProvider(existingLogoUrl),
-                            fit: BoxFit.contain,
-                          );
-                        } else {
-                          imageWidget = const Icon(
-                            Icons.image_not_supported,
-                            size: 40,
-                            color: Colors.grey,
-                          );
-                        }
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            height: 100,
-                            width: 200,
-                            color: Colors.grey.shade200,
-                            child: imageWidget,
-                          ),
-                        );
-                      }),
-
-                      const SizedBox(width: 12),
-
-                      // ---- PICK BUTTON ONLY (no clear button) ----
-                      ElevatedButton.icon(
-                        onPressed: controller.pickImage,
-                        icon: const Icon(Icons.image),
-                        label: const Text("Pick"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade400,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // ---- STATUS TEXT ----
-                  Obx(() {
-                    if (controller.selectedImagePath.value.isNotEmpty) {
-                      return Text(
-                        "New image selected",
-                        style: TextStyle(color: Colors.green, fontSize: 12),
-                      );
-                    } else if (controller.fileController.text.isNotEmpty) {
-                      return Text(
-                        "Current Logo Loaded",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      );
-                    } else {
-                      return Text(
-                        "No logo uploaded yet",
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                      );
-                    }
-                  }),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              CircularInputField(
-                controller: controller.billAddressController,
-                labelText: 'Bill Address',
-                maxLines: 3,
-                validator: (v) => controller.validateField(v, 'address'),
-              ),
-              const SizedBox(height: 16),
-
-              CircularInputField(
-                controller: controller.billGstinNumController,
-                labelText: 'GSTIN Number',
-                validator: (v) => controller.validateField(v, 'GSTIN'),
-              ),
-              const SizedBox(height: 30),
-              Obx(
-                    () => ElevatedButton(
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : () => controller.saveSystemSettings(formKey),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange.shade400,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: controller.isLoading.value
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                    'Save Settings',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+        child: RefreshIndicator(
+          onRefresh: fetchSettings,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Edit System Settings',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 20),
+                CircularInputField(
+                  controller: controller.billPrefixController,
+                  labelText: 'Bill Prefix',
+                  hintText: 'e.g., INV',
+                  //validator: (v) => controller.validateField(v, 'bill prefix'),
+                ),
+                const SizedBox(height: 16),
 
-              Obx(
-                    () => controller.savedData.value != null
-                    ? Card(
-                  color: Colors.green.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+                CircularInputField(
+                  controller: controller.quoteController,
+                  labelText: 'Quote',
+                  hintText: 'Enter your company quote',
+                ),
+                const SizedBox(height: 16),
+
+                CircularInputField(
+                  controller: controller.firmNameController,
+                  labelText: 'Firm Name',
+                  //validator: (v) => controller.validateField(v, 'firm name'),
+                ),
+                const SizedBox(height: 16),
+
+                CircularInputField(
+                  controller: controller.firmContact1Controller,
+                  labelText: 'Contact 1',
+                  keyboardType: TextInputType.phone,
+                  //validator: (v) => controller.validateField(v, 'contact 1'),
+                ),
+                const SizedBox(height: 16),
+
+                CircularInputField(
+                  controller: controller.firmContact2Controller,
+                  labelText: 'Contact 2 (Optional)',
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+
+                /*CircularInputField(
+                  controller: controller.fileController,
+                  labelText: 'Logo Path',
+                  hintText: 'e.g., /bill_quotes/3',
+                  validator: (v) => controller.validateField(v, 'logo path'),
+                ),*/
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bill Logo',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Row(
                       children: [
-                        Icon(Icons.check_circle,
-                            color: Colors.green.shade700),
+                        // ---- IMAGE PREVIEW BOX ----
+                        Obx(() {
+                          String existingLogoUrl = controller.fileController.text.trim();
+                          String pickedImage = controller.selectedImagePath.value;
+
+                          Widget imageWidget;
+
+                          if (pickedImage.isNotEmpty) {
+                            imageWidget = Image.file(
+                              File(pickedImage),
+                              fit: BoxFit.contain,
+                            );
+                          } else if (existingLogoUrl.isNotEmpty) {
+                            imageWidget = Image(
+                              image: CachedNetworkImageProvider(existingLogoUrl),
+                              fit: BoxFit.contain,
+                            );
+                          } else {
+                            imageWidget = const Icon(
+                              Icons.image_not_supported,
+                              size: 40,
+                              color: Colors.grey,
+                            );
+                          }
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              height: 100,
+                              width: 200,
+                              color: Colors.grey.shade200,
+                              child: imageWidget,
+                            ),
+                          );
+                        }),
+
                         const SizedBox(width: 12),
-                        Text(
-                          'Settings saved successfully!',
-                          style: TextStyle(
-                            color: Colors.green.shade800,
-                            fontWeight: FontWeight.w600,
+
+                        // ---- PICK BUTTON ONLY (no clear button) ----
+                        ElevatedButton.icon(
+                          onPressed: controller.pickImage,
+                          icon: const Icon(Icons.image),
+                          label: const Text("Pick"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.shade400,
+                            foregroundColor: Colors.white,
                           ),
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 8),
+
+                    // ---- STATUS TEXT ----
+                    Obx(() {
+                      if (controller.selectedImagePath.value.isNotEmpty) {
+                        return Text(
+                          "New image selected",
+                          style: TextStyle(color: Colors.green, fontSize: 12),
+                        );
+                      } else if (controller.fileController.text.isNotEmpty) {
+                        return Text(
+                          "Current Logo Loaded",
+                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        );
+                      } else {
+                        return Text(
+                          "No logo uploaded yet",
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        );
+                      }
+                    }),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                /*CircularInputField(
+                  controller: controller.billAddressController,
+                  labelText: 'Bill Address',
+                  maxLines: 7,
+                  //validator: (v) => controller.validateField(v, 'address'),
+                ),*/
+                TextField(
+                  controller: controller.billAddressController,
+                  decoration: InputDecoration(
+                    labelText: 'Bill Address',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // circular style
+                    ),
+                    alignLabelWithHint: true, // aligns label for multi-line
                   ),
-                )
-                    : const SizedBox.shrink(),
-              ),
-            ],
+                  keyboardType: TextInputType.multiline,
+
+                  maxLines: null, // unlimited growth
+                ),
+
+                const SizedBox(height: 16),
+
+                CircularInputField(
+                  controller: controller.billGstinNumController,
+                  labelText: 'GSTIN Number',
+                  //validator: (v) => controller.validateField(v, 'GSTIN'),
+                ),
+                const SizedBox(height: 30),
+                Obx(
+                      () => ElevatedButton(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : () => controller.saveSystemSettings(
+                      formKey,
+                      onSuccess: refreshSettings, // <-- auto refresh callback
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange.shade400,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: controller.isLoading.value
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                      'Save Settings',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Obx(
+                      () => controller.savedData.value != null
+                      ? Card(
+                    color: Colors.green.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: Colors.green.shade700),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Settings saved successfully!',
+                            style: TextStyle(
+                              color: Colors.green.shade800,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1039,5 +1058,12 @@ class _SystemSettingsViewState extends State<SystemSettingsView> {
       ),
     );
   }
+  Future<void> refreshSettings() async {
+    setState(() {
+      isLoadingData = true;
+    });
+    await fetchSettings();
+  }
+
 }
 

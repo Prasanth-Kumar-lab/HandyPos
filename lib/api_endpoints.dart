@@ -50,5 +50,7 @@ static const String ordersEndPoint = 'https://erpapp.in/mart_print/mart_print_ap
   static const String listSystemSettingsEndPoint = 'https://erpapp.in/mart_print/mart_print_apis/list_system_seetings_api.php';
   static const String systemSettingsEndPoint='https://erpapp.in/mart_print/mart_print_apis/system_settings_api.php';
   static const String orderCompleteEndPoint = 'https://erpapp.in/mart_print/mart_print_apis/order_complete.php';
+  static const String listBillersEndPoint = 'https://erpapp.in/mart_print/mart_print_apis/list_users_api.php';
+  static const String reportsApiEndPoint = 'https://erpapp.in/mart_print/mart_print_apis/report_api.php';
 
 }

@@ -2,11 +2,12 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:task/api_endpoints.dart';
 
 class ReportModel {
   Future<List<String>> fetchBillerIds(String businessId) async {
     final url = Uri.parse(
-      'https://erpapp.in/mart_print/mart_print_apis/list_users_api.php?business_id=$businessId',
+      '${ApiConstants.listBillersEndPoint}?business_id=$businessId',
     );
     try {
       final response = await http.get(url);
@@ -41,7 +42,7 @@ class ReportModel {
     required String billerId,
   }) async {
     final url = Uri.parse(
-      'https://erpapp.in/mart_print/mart_print_apis/report_api.php?business_id=$businessId&from_date=$fromDate&to_date=$toDate&biller_id=$billerId',
+      '${ApiConstants.reportsApiEndPoint}?business_id=$businessId&from_date=$fromDate&to_date=$toDate&biller_id=$billerId',
     );
     try {
       final response = await http.get(url);

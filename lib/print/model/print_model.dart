@@ -8,6 +8,7 @@ class Printer {
 }
 class SystemSettings {
   final String quoteId;
+  final String quote;
   final String billPrefix;
   final String firmName;
   final String firmContact1;
@@ -17,6 +18,7 @@ class SystemSettings {
   final String billLogo; // dynamic logo
   SystemSettings({
     required this.quoteId,
+    required this.quote,
     required this.billPrefix,
     required this.firmName,
     required this.firmContact1,
@@ -29,6 +31,7 @@ class SystemSettings {
   factory SystemSettings.fromJson(Map<String, dynamic> json) {
     return SystemSettings(
       quoteId: json['quote_id'] as String? ?? '',
+      quote: json['quote'] ?? '',
       billPrefix: json['bill_prefix'] as String? ?? '',
       firmName: json['firm_name'] as String? ?? '',
       firmContact1: json['firm_contact1'] as String? ?? '',

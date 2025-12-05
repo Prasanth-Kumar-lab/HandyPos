@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_thermal_printer_plus/flutter_thermal_printer_plus.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
@@ -10,9 +12,6 @@ import 'package:task/profile/views/profile_page.dart';
 import 'package:task/print/views/print_screen.dart';
 import '../../print/controller/print_controller.dart';
 import '../controller/controller.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter_bluetooth_printer/flutter_bluetooth_printer_library.dart';
 import '../model/product_model.dart';
 class HomeScreen extends StatefulWidget {
   final String name;
@@ -46,13 +45,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final printController = Get.find<PrintController>();
-      printController.initializePrinterConnection(context);
     });
     Get.put(PrintController(
+      businessId: widget.businessId,
       initialProducts: [],
       initialTotal: 0.0,
-      businessId: widget.businessId,
     ));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoConnectToPrinter();
+    });
     _controller = Get.put(ProductController(
       businessId: widget.businessId,
       billerId: widget.user_id,
@@ -69,14 +70,36 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _animationController?.dispose();
     super.dispose();
   }
+  void _autoConnectToPrinter() async {
+    await Future.delayed(Duration(milliseconds: 500)); // Small delay for stability
+    final printController = Get.find<PrintController>();
 
+    final isConnected = await FlutterThermalPrinterPlus.isConnected();
+    if (!isConnected) {
+      // Show toast message
+      /*Fluttertoast.showToast(
+        msg: "Connecting to saved printer...",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );*/
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return ScaffoldMessenger(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Hello ${widget.name}', style: TextStyle(fontWeight: FontWeight.bold, color: TextColors.majorTextColor)),
-          leading: IconButton(
+          title: Tooltip(
+            message: '${widget.name}', // The text to display in the tooltip
+            child: Text(
+              '${widget.name}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: TextColors.majorTextColor,
+              ),
+            ),
+          ),
+            leading: IconButton(
             onPressed: () {
               Get.to(() => ProfilePage(
                 businessId: widget.businessId,
@@ -92,6 +115,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           backgroundColor: AppBarIcons.appBarBg.withOpacity(0.6),
           actions: [
             IconButton(onPressed: _controller.fetchProducts, icon: Icon(Icons.sync)),
+            // Add this in your Positioned widget or somewhere visible
+            Obx(() {
+              final printController = Get.find<PrintController>();
+              final status = printController.connectionStatus.value;
+              final isConnected = status == "Connected";
+
+              return Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isConnected ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: isConnected ? Colors.green : Colors.orange),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isConnected ? Icons.print : Icons.print_disabled,
+                      color: isConnected ? Colors.white : Colors.orange,
+                      size: 16,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      status,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isConnected ? Colors.black : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            })
           ],
         ),
         body: Stack(
@@ -179,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           crossAxisCount: 2, // 2 columns
                                           mainAxisSpacing: 8,
                                           crossAxisSpacing: 8,
-                                          childAspectRatio: 160 / 220, // width / height ratio of your cards
+                                          childAspectRatio: 160 / 210, // width / height ratio of your cards 220
                                         ),
                                         itemCount: products.length,
                                         itemBuilder: (context, index) {
@@ -189,7 +246,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               (product.itemName != null &&
                                                   product.itemName!.toLowerCase().replaceAll(' ', '').contains(
                                                       _controller.searchQuery.value.toLowerCase().replaceAll(' ', '')));
-
                                           return buildProductCard(product, originalIndex, isSearchMatch);
                                         },
                                       ),
@@ -323,71 +379,81 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     ),
                                   ),*/
                                   ElevatedButton(
-                            onPressed: () async {
-                      final printController = Get.find<PrintController>();
-                      final productController = Get.find<ProductController>();
+                                    onPressed: () async {
+                                      final printController = Get.find<PrintController>();
+                                      final productController = Get.find<ProductController>();
+                                      await printController.fetchSystemSettings();
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        barrierColor: Colors.black.withOpacity(0.4),
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: Colors.transparent,
+                                          content: Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                CircularProgressIndicator(color: Colors.white),
+                                                SizedBox(height: 20),
+                                                Text(
+                                                  "Completing order...",
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
 
-                      showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      barrierColor: Colors.black.withOpacity(0.4),
-                      builder: (context) => AlertDialog(
-                      backgroundColor: Colors.transparent,
-                      content: Center(
-                      child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                      CircularProgressIndicator(color: Colors.white),
-                      SizedBox(height: 20),
-                      Text(
-                      "Completing order...",
-                      style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      ),
-                      ),
-                      ],
-                      ),
-                      ),
-                      ),
-                      );
+                                      try {
+                                        final bool orderCompleted =
+                                        await printController.completeOrder(productController.cartId.value);
 
-                      try {
-                      final bool orderCompleted =
-                      await printController.completeOrder(productController.cartId.value);
+                                        Navigator.of(context).pop(); // Close loading dialog
 
-                      Navigator.of(context).pop(); // Close loading dialog
+                                        if (!orderCompleted) {
+                                          Get.snackbar(
+                                            'Error',
+                                            'Failed to complete order. Cannot preview.',
+                                            backgroundColor: Colors.red,
+                                            colorText: Colors.white,
+                                          );
+                                          Fluttertoast.showToast(
+                                            msg: 'Error, Failed to complete order. Cannot preview.',
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.CENTER,
+                                            backgroundColor: Colors.red,
+                                            textColor: Colors.white,
+                                            fontSize: 16.0,
+                                          );
+                                          return;
+                                        }
 
-                      if (!orderCompleted) {
-                      Get.snackbar(
-                      'Error',
-                      'Failed to complete order. Cannot preview.',
-                      backgroundColor: Colors.red,
-                      colorText: Colors.white,
-                      );
-                      return;
-                      }
+                                        await productController.fetchCartItems();
+                                        await printController.syncCartData(productController);
 
-                      await productController.fetchCartItems();
-                      await printController.syncCartData(productController);
-
-                      Get.to(() => PrintScreen(
-                      initialProducts: productController.cartItems.toList(),
-                      initialTotal: productController.computedGrandTotal,
-                      businessId: widget.businessId,
-                      ));
-                      } catch (e) {
-                      Navigator.of(context).pop(); // Ensure dialog closes
-                      Get.snackbar(
-                      'Error',
-                      'An unexpected error occurred: $e',
-                      backgroundColor: Colors.red,
-                      colorText: Colors.white,
-                      );
-                      }
-                      },
-                        child: Text(
+                                        Get.to(() => PrintScreen(
+                                          initialProducts: productController.cartItems.toList(),
+                                          initialTotal: productController.computedGrandTotal,
+                                          businessId: widget.businessId,
+                                        ));
+                                      } catch (e) {
+                                        Navigator.of(context).pop(); // Ensure dialog closes
+                                        Fluttertoast.showToast(
+                                          msg: 'Error, An Unexpected error occurred',
+                                          toastLength: Toast.LENGTH_LONG,
+                                          gravity: ToastGravity.CENTER,
+                                          backgroundColor: Colors.red,
+                                          textColor: Colors.white,
+                                          fontSize: 16.0,
+                                        );
+                                      }
+                                    },
+                                    child: Text(
                                       'Preview & Print',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
@@ -406,262 +472,166 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ),
                                 SizedBox(width: 8),
                                 Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      final printController = Get.find<PrintController>();
-                                      final productController = Get.find<ProductController>();
-                                      final BuildContext ctx = context;
+                                  child: ElevatedButton.icon(
+                                    /*onPressed: () async {
+                                      final printCtrl = Get.find<PrintController>();
+                                      final prodCtrl = Get.find<ProductController>();
 
-                                      // ──────────────────────── 1. Completing Order... ────────────────────────
-                                      showDialog(
-                                        context: ctx,
-                                        barrierDismissible: false,
-                                        barrierColor: Colors.black54,
-                                        builder: (_) => const AlertDialog(
-                                          backgroundColor: Colors.transparent,
-                                          content: Center(
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                CircularProgressIndicator(color: Colors.white),
-                                                SizedBox(height: 20),
-                                                Text(
-                                                  "Completing Order...",
-                                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
+                                      // Prevent double tap
+                                      if (printCtrl.isPrinting.value) return;
+                                      printCtrl.isPrinting.value = true;
 
                                       try {
-                                        // Complete order + refresh data
-                                        final success = await printController.completeOrder(productController.cartId.value);
-                                        if (!success) {
-                                          if (ctx.mounted) Navigator.pop(ctx);
-                                          Get.snackbar('Failed', 'Order could not be completed', backgroundColor: Colors.red, colorText: Colors.white);
-                                          return;
+                                        // Show "Completing Order..." toast
+                                        Fluttertoast.showToast(
+                                          msg: "Completing Order please wait...",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                          backgroundColor: Colors.black,
+                                          textColor: Colors.white,
+                                          fontSize: 16.0,
+                                        );
+                                        // Complete order on server
+                                        final orderSuccess = await printCtrl.completeOrder(prodCtrl.cartId.value);
+                                        if (!orderSuccess) throw Exception("Failed to complete order");
+
+                                        await prodCtrl.fetchCartItems(); // refresh cart
+
+                                        // Show "Printing Receipt..." toast
+                                        Fluttertoast.showToast(
+                                          msg: "Printing Receipt.....",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                          backgroundColor: Colors.black,
+                                          textColor: Colors.white,
+                                          fontSize: 16.0,
+                                        );
+
+                                        // Print
+                                        final printSuccess = await printCtrl.printCurrentReceipt();
+
+                                        // Show result toast
+                                        if (printSuccess) {
+                                          Fluttertoast.showToast(
+                                            msg: "Printed Successfully\nReceipt sent to printer",
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.CENTER,
+                                            backgroundColor: Colors.green.shade900,
+                                            textColor: Colors.white,
+                                            fontSize: 16.0,
+                                          );
+                                          // Clear cart and go back to home if needed
+                                          prodCtrl.resetUICart();
+                                          await Future.delayed(const Duration(milliseconds: 600));
+                                          if (Get.routing.current == '/print' || Get.routing.previous == '/cart') {
+                                            Get.back(); // or Get.offAllNamed('/home')
+                                          }
+                                        } else {
+                                          Fluttertoast.showToast(
+                                            msg: "Order Saved, No printer connected, but order completed",
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.CENTER,
+                                            backgroundColor: Colors.green,
+                                            textColor: Colors.white,
+                                            fontSize: 16.0,
+                                          );
+                                        }
+                                      } catch (e) {
+                                        Fluttertoast.showToast(
+                                          msg: "Failed: to print ",  //${e.toString()}
+                                          toastLength: Toast.LENGTH_LONG,
+                                          gravity: ToastGravity.CENTER,
+                                          backgroundColor: Colors.red,
+                                          textColor: Colors.white,
+                                          fontSize: 16.0,
+                                        );
+                                      } finally {
+                                        printCtrl.isPrinting.value = false;
+                                      }
+                                    },*/
+                                    onPressed: () async {
+                                      final printCtrl = Get.find<PrintController>();
+                                      final prodCtrl = Get.find<ProductController>();
+
+                                      // Prevent double tap
+                                      if (printCtrl.isPrinting.value) return;
+                                      printCtrl.isPrinting.value = true;
+
+                                      try {
+                                        Fluttertoast.showToast(
+                                          msg: "Completing Order please wait...",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                          backgroundColor: Colors.black87,
+                                          textColor: Colors.white,
+                                        );
+
+                                        final orderSuccess = await printCtrl.completeOrder(prodCtrl.cartId.value);
+                                        if (!orderSuccess) throw Exception("Failed to complete order");
+
+                                        await prodCtrl.fetchCartItems();
+
+                                        Fluttertoast.showToast(
+                                          msg: "Printing Receipt.....",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                          backgroundColor: Colors.black87,
+                                          textColor: Colors.white,
+                                        );
+
+                                        final printSuccess = await printCtrl.printCurrentReceipt();
+
+                                        // CRITICAL: Reset cart BEFORE showing success toast
+                                        // AND do it in a microtask so rebuild happens cleanly
+                                        await Future.microtask(() {
+                                          prodCtrl.resetUICart(); // This now works reliably
+                                        });
+
+                                        // Small delay to let UI settle (optional but smooth)
+                                        await Future.delayed(const Duration(milliseconds: 300));
+
+                                        if (printSuccess) {
+                                          Fluttertoast.showToast(
+                                            msg: "Printed Successfully\nReceipt sent to printer",
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.CENTER,
+                                            backgroundColor: Colors.green.shade900,
+                                            textColor: Colors.white,
+                                            fontSize: 16.0,
+                                          );
+                                        } else {
+                                          Fluttertoast.showToast(
+                                            msg: "Order Saved\nNo printer connected",
+                                            toastLength: Toast.LENGTH_LONG,
+                                            gravity: ToastGravity.CENTER,
+                                            backgroundColor: Colors.green,
+                                            textColor: Colors.white,
+                                          );
                                         }
 
-                                        await productController.fetchCartItems();
-                                        await printController.syncCartData(productController);
-                                        await printController.fetchSystemSettings();
-
-                                        if (!ctx.mounted) return;
-                                        Navigator.pop(ctx); // Close "Completing Order" dialog
-
-                                        // ──────────────────────── 2. Show Receipt + Printing Dialog ON TOP ────────────────────────
-                                        BuildContext? printingDialogContext;
-
-                                        // Show receipt dialog
-                                        final receiptDialogContext = await showDialog(
-                                          context: ctx,
-                                          barrierDismissible: false,
-                                          builder: (dialogContext) => Dialog(
-                                            insetPadding: const EdgeInsets.all(12),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(16),
-                                              child: Container(
-                                                color: Colors.white,
-                                                padding: const EdgeInsets.all(12),
-                                                child: Stack(
-                                                  children: [
-                                                    // YOUR FULL RECEIPT (same as PrintScreen)
-                                                    Obx(() {
-                                                      final settings = printController.systemSettings.value;
-                                                      final cartItems = productController.cartItems;
-
-                                                      if (settings == null) {
-                                                        return const Center(child: CircularProgressIndicator());
-                                                      }
-
-                                                      final now = DateTime.now();
-                                                      final formattedDate = DateFormat('dd/MM/yyyy hh:mm:ss a').format(now);
-
-                                                      List<String> splitText(String text, int max) {
-                                                        final lines = <String>[];
-                                                        while (text.isNotEmpty) {
-                                                          if (text.length <= max) {
-                                                            lines.add(text);
-                                                            break;
-                                                          }
-                                                          var split = text.substring(0, max).lastIndexOf(' ');
-                                                          if (split == -1 || split < max ~/ 2) split = max;
-                                                          lines.add(text.substring(0, split));
-                                                          text = text.substring(split).trim();
-                                                        }
-                                                        return lines;
-                                                      }
-
-                                                      return Receipt(
-                                                        builder: (_) => Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          children: [
-                                                            // ← Your full receipt layout here (logo, name, items, totals)
-                                                            Center(child: Image(image: CachedNetworkImageProvider(settings.billLogo), height: 80, width: 200, fit: BoxFit.contain)),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Center(child: Text(settings.firmName, style: GoogleFonts.merriweather(fontSize: 20, fontWeight: FontWeight.bold))),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Center(child: Text('CONTACT : ${settings.firmContact1} ${settings.firmContact2}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Center(child: Text(settings.billAddress ?? 'Not mentioned bill address', textAlign: TextAlign.center, style: GoogleFonts.merriweather(fontSize: 15, fontWeight: FontWeight.bold))),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Center(child: Text('GSTIN : ${settings.billGstinNum}', style: PrintConstants.mainDetailsTextStyle)),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Row(children: [Obx(() => Text('INVOICE ID : ${productController.finalInvoiceId.value}', style: PrintConstants.mainDetailsTextStyle))]),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Text('DATE: $formattedDate', style: PrintConstants.mainDetailsTextStyle),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Obx(() {
-                                                              final lines = splitText(productController.customerName.value, 20);
-                                                              return Column(
-                                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                                children: lines.map((l) => Text(lines.first == l ? 'CUSTOMER NAME : $l' : l, style: PrintConstants.mainDetailsTextStyle)).toList(),
-                                                              );
-                                                            }),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Obx(() => Text('MOBILE : ${productController.customerMobileNumber.value}', style: PrintConstants.mainDetailsTextStyle)),
-                                                            PrintConstants.spaceBetweenWidgets,
-
-                                                            // Table Header
-                                                            Row(
-                                                              children: const [
-                                                                Expanded(flex: 1, child: Text('#', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.center)),
-                                                                Expanded(flex: 5, child: Text('ITEMS', style: PrintConstants.itemsTextStyle)),
-                                                                Expanded(flex: 3, child: Text('AMOUNT', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.right)),
-                                                                Expanded(flex: 2, child: Text('QTY', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.center)),
-                                                                Expanded(flex: 3, child: Text('TOTAL', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.right)),
-                                                              ],
-                                                            ),
-                                                            const Divider(color: Colors.black),
-
-                                                            // Items List
-                                                            ...cartItems.asMap().entries.expand((e) {
-                                                              final idx = e.key + 1;
-                                                              final p = e.value;
-                                                              final total = (p.sellingPrice ?? 0) * p.quantity;
-                                                              final lines = splitText(p.itemName ?? 'Unknown', 20);
-                                                              return lines.asMap().entries.map((le) {
-                                                                final lineIdx = le.key;
-                                                                final line = le.value;
-                                                                return Row(
-                                                                  children: [
-                                                                    Expanded(flex: 1, child: Text(lineIdx == 0 ? '$idx' : '', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.center)),
-                                                                    Expanded(flex: 5, child: Text(line, style: PrintConstants.itemsTextStyle)),
-                                                                    Expanded(flex: 3, child: Text(lineIdx == 0 ? (p.sellingPrice ?? 0).toStringAsFixed(2) : '', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.right)),
-                                                                    Expanded(flex: 2, child: Text(lineIdx == 0 ? 'x${p.quantity}' : '', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.center)),
-                                                                    Expanded(flex: 3, child: Text(lineIdx == 0 ? total.toStringAsFixed(2) : '', style: PrintConstants.itemsTextStyle, textAlign: TextAlign.right)),
-                                                                  ],
-                                                                );
-                                                              });
-                                                            }),
-
-                                                            const Divider(color: Colors.black),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            Column(
-                                                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                                                              children: [
-                                                                _buildAmountRow('General Items', '${cartItems.length}'),
-                                                                _buildAmountRow('Sub-Total', productController.totalAmount.value.toStringAsFixed(2)),
-                                                                _buildAmountRow('GST', productController.gstAmount.value.toStringAsFixed(2)),
-                                                                _buildAmountRow('Round-Off', productController.roundOff.value.toStringAsFixed(2)),
-                                                                _buildAmountRow('Grand Total', (productController.totalAmount.value + productController.gstAmount.value + productController.roundOff.value).toStringAsFixed(2), isBold: true),
-                                                              ],
-                                                            ),
-                                                            const Divider(color: Colors.black),
-                                                            PrintConstants.spaceBetweenWidgets,
-                                                            const Center(child: Text('Thank You.. Visit Again..!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22))),
-                                                            const SizedBox(height: 20),
-                                                          ],
-                                                        ),
-
-                                                        // THIS IS THE KEY: Show "Printing in progress" AFTER receipt is rendered
-                                                        onInitialized: (controller) async {
-                                                          printController.setReceiptController(controller);
-
-                                                          // Wait one frame so receipt is fully visible
-                                                          WidgetsBinding.instance.addPostFrameCallback((_) async {
-                                                            if (!ctx.mounted) return;
-
-                                                            // NOW show "Printing in progress" on top
-                                                            showDialog(
-                                                              context: ctx,
-                                                              barrierDismissible: false,
-                                                              barrierColor: Colors.transparent,
-                                                              builder: (context) {
-                                                                printingDialogContext = context;
-                                                                return Dialog(
-                                                                  backgroundColor: Colors.transparent,
-                                                                  elevation: 0,
-                                                                  child: Center(
-                                                                    child: Container(
-                                                                      padding: const EdgeInsets.all(28),
-                                                                      decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(16)),
-                                                                      child: const Column(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        children: [
-                                                                          CircularProgressIndicator(color: Colors.white, strokeWidth: 4),
-                                                                          SizedBox(height: 24),
-                                                                          Text(
-                                                                            "Please wait…\nPrinting in progress",
-                                                                            textAlign: TextAlign.center,
-                                                                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              },
-                                                            );
-
-                                                            // Now print
-                                                            await printController.printReceipt(dialogContext, productController);
-
-                                                            // Close printing dialog when done
-                                                            if (printingDialogContext?.mounted == true) {
-                                                              Navigator.of(printingDialogContext!).pop();
-                                                            }
-
-                                                            // Auto-close receipt after 3 seconds
-                                                            Future.delayed(const Duration(seconds: 3), () {
-                                                              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                                                            });
-                                                          });
-                                                        },
-                                                      );
-                                                    }),
-
-                                                    // Close button
-                                                    Positioned(
-                                                      top: 4,
-                                                      right: 4,
-                                                      child: IconButton(
-                                                        icon: const Icon(Icons.close, color: Colors.grey),
-                                                        onPressed: () => Navigator.of(dialogContext).pop(),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        );
+                                        // Optional: Navigate away if needed
+                                        // Get.offAllNamed('/home');
                                       } catch (e) {
-                                        if (ctx.mounted) Navigator.pop(ctx);
-                                        Get.snackbar('Error', 'Failed: $e', backgroundColor: Colors.red, colorText: Colors.white);
+                                        Fluttertoast.showToast(
+                                          msg: "Print failed",//: ${e.toString()}
+                                          toastLength: Toast.LENGTH_LONG,
+                                          gravity: ToastGravity.CENTER,
+                                          backgroundColor: Colors.red.shade700,
+                                          textColor: Colors.white,
+                                        );
+                                      } finally {
+                                        printCtrl.isPrinting.value = false;
                                       }
                                     },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green[600],
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                    ),
-                                    child: const Text(
-                                      'Print',
+                                    label: const Text(
+                                      "Print",
                                       style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green[700],
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
                                   ),
                                 ),
@@ -1088,11 +1058,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   child: ElevatedButton(
                                     onPressed: () async {
                                       await printController.selectBluetoothDevice(context);
-                                      Get.snackbar(
-                                        'Printer Selected',
-                                        'Printer selection updated',
-                                        snackPosition: SnackPosition.BOTTOM,
-                                      );
+                                      /*Fluttertoast.showToast(
+                                        msg: 'Printer Selected, printer selection updated',
+                                        toastLength: Toast.LENGTH_LONG,
+                                        gravity: ToastGravity.BOTTOM,
+                                        backgroundColor: Colors.green,
+                                        textColor: Colors.white,
+                                        fontSize: 16.0,
+                                      );*/
                                     },
                                     child: Text(
                                       'Select Device',
@@ -1153,7 +1126,541 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  Widget buildProductCard(Product product, int originalIndex, bool isSearchMatch) {
+    final isUnavailable = product.availabilityStatus?.toLowerCase() == 'un-available';
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double cardWidth = constraints.maxWidth;
+        double cardHeight = constraints.maxHeight;
+
+        // Responsive sizes with minimum limits
+        double imageSize = (cardWidth * 0.25).clamp(60, 120); // min 60, max 120
+        double fontSizeTitle = (cardWidth * 0.06).clamp(14, 20);
+        double fontSizePrice = (cardWidth * 0.045).clamp(12, 18);
+        double buttonRadius = (cardWidth * 0.07).clamp(14, 22);
+        double spacing = (cardWidth * 0.05).clamp(12, 20);
+
+        return Card(
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: isSearchMatch
+                ? BorderSide(color: ProductsCardColors.activeBorderSideColor, width: 1)
+                : BorderSide(color: ProductsCardColors.borderSideColor[300]!, width: 1),
+          ),
+          color: isUnavailable
+              ? ProductsCardColors.UnavailableProductCardColor[400]
+              : ProductsCardColors.availableProductCardColor,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Top Availability Bar
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: (cardHeight * 0.03).clamp(6, 12),
+                  horizontal: (cardWidth * 0.03).clamp(6, 12),
+                ),
+                decoration: BoxDecoration(
+                  color: isUnavailable
+                      ? ProductsCardColors.unavailableBorderColor.shade700
+                      : ProductsCardColors.availableBorderColor.shade700,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  product.availabilityStatus ?? 'Not mentioned',
+                  style: TextStyle(
+                    color: ProductsCardColors.productStatus,
+                    fontWeight: FontWeight.bold,
+                    fontSize: fontSizePrice,
+                  ),
+                  textAlign: TextAlign.center,
+                ).animate(onPlay: (controller) => controller.repeat()).shimmer(
+                  duration: 2000.ms,
+                  color: ProductsCardColors.productStatusShimmerColor,
+                ),
+              ),
+              // Image & Product Info
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (product.itemImage != null && product.itemImage!.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _showFullScreenImage(
+                            context,
+                            product.itemImage!,
+                            product.itemName ?? "Unnamed Product",
+                            product.sellingPrice,        // <-- new
+                            product.sellingUnit,
+                          );
+                        },
+                        child: Hero(
+                          tag: 'product-image-${product.itemImage}',
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image(
+                              image: CachedNetworkImageProvider(product.itemImage!),
+                              height: imageSize,
+                              width: imageSize,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                height: imageSize,
+                                width: imageSize,
+                                color: Colors.grey[300],
+                                child: Icon(Icons.broken_image, color: Colors.grey),
+                              ),
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  height: imageSize,
+                                  width: imageSize,
+                                  color: Colors.grey[300],
+                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        height: imageSize,
+                        width: imageSize,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                      ),
+                    SizedBox(height: spacing / 2),
+                    Padding(
+                      padding: EdgeInsets.all(spacing / 2),
+                      child: Text(
+                        product.itemName ?? 'No name',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: fontSizeTitle,
+                          color: isUnavailable
+                              ? TextColors.minorTextColor
+                              : TextColors.majorTextColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '₹${product.sellingPrice?.toStringAsFixed(2) ?? 'N/A'} ',
+                          style: TextStyle(
+                            color: isUnavailable
+                                ? TextColors.minorTextColor
+                                : TextColors.majorTextColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: fontSizePrice,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Text(
+                          '(${product.sellingUnit ?? 'N/A'})',
+                          style: TextStyle(
+                            color: isUnavailable
+                                ? TextColors.minorTextColor
+                                : TextColors.majorTextColor,
+                            fontSize: fontSizePrice,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Quantity Selector
+              Padding(
+                padding: EdgeInsets.only(bottom: spacing / 1.5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Decrement Button
+                    GestureDetector(
+                      onTap: () => _controller.decrementQuantity(originalIndex),
+                      child: CircleAvatar(
+                        backgroundColor: ProductsCardColors.productDecrementBg.shade700,
+                        radius: buttonRadius + 2, // <-- increased size
+                        child: Icon(Icons.remove, color: Colors.white, size: buttonRadius + 8),
+                      ),
+                    ),
+                    SizedBox(width: spacing),
+                    // Animated Quantity
+                    AnimatedSwitcher(
+                      duration: Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) {
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: Offset(0, 0.4),
+                            end: Offset(0, 0),
+                          ).animate(animation),
+                          child: FadeTransition(opacity: animation, child: child),
+                        );
+                      },
+                      child: Text(
+                        product.quantity.toString(),
+                        key: ValueKey(product.quantity),
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                    SizedBox(width: spacing),
+                    // Increment Button
+                    GestureDetector(
+                      onTap: isUnavailable ? null : () => _controller.incrementQuantity(originalIndex),
+                      child: CircleAvatar(
+                        backgroundColor: isUnavailable
+                            ? Colors.grey
+                            : ProductsCardColors.productIncrementBg.shade700,
+                        radius: buttonRadius + 2, // <-- increased size
+                        child: Icon(Icons.add, color: Colors.white, size: buttonRadius + 8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  void _showFullScreenImage(
+      BuildContext context,
+      String imageUrl,
+      String productName,
+      // Add the price (and optionally unit) so we can show it
+      double? sellingPrice,
+      String? sellingUnit,
+      ) {
+    showGeneralDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.9),
+      barrierDismissible: true,
+      barrierLabel: "Dismiss",
+      transitionDuration: const Duration(milliseconds: 350),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    // Full-screen zoomable image
+                    Center(
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: InteractiveViewer(
+                          panEnabled: true,
+                          minScale: 0.5,
+                          maxScale: 4.0,
+                          child: Hero(
+                            tag: 'product-image-$imageUrl',
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image(
+                                image: CachedNetworkImageProvider(imageUrl),
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.black38,
+                                  child: const Icon(Icons.broken_image,
+                                      color: Colors.white70, size: 80),
+                                ),
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    color: Colors.black38,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                          color: Colors.white70),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Close button
+                    Positioned(
+                      top: 60,
+                      right: 20,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close,
+                              color: Colors.white, size: 30),
+                        ),
+                      ),
+                    ),
+
+                    // Product name + price overlay at the bottom
+                    Positioned(
+                      bottom: 0,
+                      left: 20,
+                      right: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Product name
+                            Text(
+                              productName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            // Price + unit
+                            Text(
+                              sellingPrice != null
+                                  ? '₹${sellingPrice.toStringAsFixed(2)}' //${sellingUnit ?? ''}
+                                  : 'Price not available',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.75, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+  /*
+  Widget buildProductCard(Product product, int originalIndex, bool isSearchMatch) {
+  final isUnavailable = product.availabilityStatus?.toLowerCase() == 'un-available';
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      double cardWidth = constraints.maxWidth;
+      double cardHeight = constraints.maxHeight;
+
+      // Responsive sizes with minimum limits
+      double imageSize = (cardWidth * 0.25).clamp(60, 120); // min 60, max 120
+      double fontSizeTitle = (cardWidth * 0.06).clamp(14, 20);
+      double fontSizePrice = (cardWidth * 0.045).clamp(12, 18);
+      double buttonRadius = (cardWidth * 0.07).clamp(14, 22);
+      double spacing = (cardWidth * 0.05).clamp(12, 20);
+
+      return Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: isSearchMatch
+              ? BorderSide(color: ProductsCardColors.activeBorderSideColor, width: 1)
+              : BorderSide(color: ProductsCardColors.borderSideColor[300]!, width: 1),
+        ),
+        color: isUnavailable
+            ? ProductsCardColors.UnavailableProductCardColor[400]
+            : ProductsCardColors.availableProductCardColor,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Top Availability Bar
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                vertical: (cardHeight * 0.03).clamp(6, 12),
+                horizontal: (cardWidth * 0.03).clamp(6, 12),
+              ),
+              decoration: BoxDecoration(
+                color: isUnavailable
+                    ? ProductsCardColors.unavailableBorderColor.shade700
+                    : ProductsCardColors.availableBorderColor.shade700,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              child: Text(
+                product.availabilityStatus ?? 'Not mentioned',
+                style: TextStyle(
+                  color: ProductsCardColors.productStatus,
+                  fontWeight: FontWeight.bold,
+                  fontSize: fontSizePrice,
+                ),
+                textAlign: TextAlign.center,
+              ).animate(onPlay: (controller) => controller.repeat()).shimmer(
+                duration: 2000.ms,
+                color: ProductsCardColors.productStatusShimmerColor,
+              ),
+            ),
+            // Image & Product Info
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (product.itemImage != null && product.itemImage!.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image(
+                        image: CachedNetworkImageProvider(product.itemImage!),
+                        height: imageSize,
+                        width: imageSize,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: imageSize,
+                            width: imageSize,
+                            color: Colors.grey[300],
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    Container(
+                      height: imageSize,
+                      width: imageSize,
+                      color: Colors.grey[300],
+                    ),
+                  SizedBox(height: spacing / 2),
+                  Padding(
+                    padding: EdgeInsets.all(spacing / 2),
+                    child: Text(
+                      product.itemName ?? 'No name',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: fontSizeTitle,
+                        color: isUnavailable
+                            ? TextColors.minorTextColor
+                            : TextColors.majorTextColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '₹${product.sellingPrice?.toStringAsFixed(2) ?? 'N/A'} ',
+                        style: TextStyle(
+                          color: isUnavailable
+                              ? TextColors.minorTextColor
+                              : TextColors.majorTextColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: fontSizePrice,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        '(${product.sellingUnit ?? 'N/A'})',
+                        style: TextStyle(
+                          color: isUnavailable
+                              ? TextColors.minorTextColor
+                              : TextColors.majorTextColor,
+                          fontSize: fontSizePrice,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Quantity Selector
+            Padding(
+              padding: EdgeInsets.only(bottom: spacing / 1.5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Decrement Button
+                  GestureDetector(
+                    onTap: () => _controller.decrementQuantity(originalIndex),
+                    child: CircleAvatar(
+                      backgroundColor: ProductsCardColors.productDecrementBg.shade700,
+                      radius: buttonRadius + 2, // <-- increased size
+                      child: Icon(Icons.remove, color: Colors.white, size: buttonRadius + 8),
+                    ),
+                  ),
+                  SizedBox(width: spacing),
+                  // Animated Quantity
+                  AnimatedSwitcher(
+                    duration: Duration(milliseconds: 250),
+                    transitionBuilder: (child, animation) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: Offset(0, 0.4),
+                          end: Offset(0, 0),
+                        ).animate(animation),
+                        child: FadeTransition(opacity: animation, child: child),
+                      );
+                    },
+                    child: Text(
+                      product.quantity.toString(),
+                      key: ValueKey(product.quantity),
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  SizedBox(width: spacing),
+                  // Increment Button
+                  GestureDetector(
+                    onTap: isUnavailable ? null : () => _controller.incrementQuantity(originalIndex),
+                    child: CircleAvatar(
+                      backgroundColor: isUnavailable
+                          ? Colors.grey
+                          : ProductsCardColors.productIncrementBg.shade700,
+                      radius: buttonRadius + 2, // <-- increased size
+                      child: Icon(Icons.add, color: Colors.white, size: buttonRadius + 8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
   Widget buildProductCard(Product product, int originalIndex, bool isSearchMatch) {
     final isUnavailable = product.availabilityStatus?.toLowerCase() == 'un-available';
     return Card(
@@ -1421,6 +1928,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
     );
   }
+   */
 
 
   Widget _buildShimmerGrid() {
